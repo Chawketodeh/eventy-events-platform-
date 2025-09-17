@@ -13,20 +13,18 @@ const isIgnored = createRouteMatcher([
 const isPublic = createRouteMatcher([
   "/",
   "/events/:id",
-  // (optional) also list ignored ones here if you want them considered public too
+  "/sign-in(.*)",   // ✅ added
+  "/sign-up(.*)",   // ✅ added
   "/api/webhook/clerk(.*)",
   "/api/webhook/stripe(.*)",
   "/api/uploadthing(.*)",
 ]);
 
 export default clerkMiddleware(async (auth, req) => {
-  // === ignoredRoutes behavior ===
   if (isIgnored(req)) {
-    // Do nothing: no auth checks, no redirects
-    return NextResponse.next();
+    return NextResponse.next(); // skip Clerk completely
   }
 
-  // === publicRoutes behavior ===
   if (!isPublic(req)) {
     await auth.protect(); // redirect unauthenticated users
   }

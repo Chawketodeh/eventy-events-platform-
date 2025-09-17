@@ -80,4 +80,7 @@
 @layer utilities {
   .test-red { @apply text-red-500; }
   .test-blue { @apply bg-blue-500 text-white px-3 py-1 rounded; }
+   .flex-center {
+    @apply flex items-center justify-center;
+  }
 }
