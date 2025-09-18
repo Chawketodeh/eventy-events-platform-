@@ -83,4 +83,29 @@
    .flex-center {
     @apply flex items-center justify-center;
   }
+  .flex-between {
+    @apply flex justify-between items-center;
+  }
+  .bg-dotted-pattern {
+    background-image: url('/assets/images/dotted-pattern.svg');
+  }
+  .wrapper {
+    @apply w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+
+  .p-medium-16 {
+    @apply text-base font-medium; /* ~16px, medium weight */
+  }
+
+  .text-primary-500 {
+    color: hsl(var(--primary));
+  }
+
+  .bg-primary-500 {
+    background-color: hsl(var(--primary));
+  }
+
+  .border-primary-500 {
+    border-color: hsl(var(--primary));
+  }
 }
