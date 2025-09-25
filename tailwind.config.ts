@@ -10,5 +10,5 @@ const config: Config = {
 };
 
 export default config;
-
+// it is for settings + theme tokens for Tailwind.
 //ya weldi chbik

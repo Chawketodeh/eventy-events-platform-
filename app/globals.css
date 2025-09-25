@@ -108,4 +108,12 @@
   .border-primary-500 {
     border-color: hsl(var(--primary));
   }
+
+  .h1-bold {
+    @apply text-4xl md:text-5xl font-extrabold leading-tight;
+  }
+
+  .h2-bold {
+    @apply text-3xl md:text-5xl font-bold leading-snug;
+  }
 }
