@@ -42,11 +42,11 @@ export async function POST(req: NextRequest) {
 
       const user = {
         clerkId: id,
-        email: email_addresses[0].email_address,
-        userName: username ?? "",
-        firstName: first_name ?? "",
-        lastName: last_name ?? "",
-        photo: image_url,
+        email: email_addresses[0]?.email_address || "",
+        userName: username || "", // ✅ safe
+        firstName: first_name || "", // ✅ safe
+        lastName: last_name || "", // ✅ safe
+        photo: image_url || "",
       };
 
       const newUser = await createUser(user);
@@ -71,10 +71,10 @@ export async function POST(req: NextRequest) {
       const { image_url, first_name, last_name, username } = evt.data;
 
       const user = {
-        firstName: first_name ?? "",
-        lastName: last_name ?? "",
-        userName: username ?? "",
-        photo: image_url,
+        userName: username || "", // default to "" if missing
+        firstName: first_name || "", // default to "" if missing
+        lastName: last_name || "", // default to "" if missing
+        photo: image_url || "",
       };
 
       const updatedUser = await updateUser(id!, user);

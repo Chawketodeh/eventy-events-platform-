@@ -19,7 +19,7 @@ export const createUser = async (user: CreateUserParams) => {
     const newUser = await User.findOneAndUpdate(
       { clerkId: user.clerkId }, // search by clerkId
       user, // update with latest data
-      { new: true, upsert: true } // create if not exists
+      { new: true, upsert: true, setDefaultsOnInsert: true } // create if not exists + apply defaults
     );
 
     console.log("✅ User upserted in DB:", newUser);
