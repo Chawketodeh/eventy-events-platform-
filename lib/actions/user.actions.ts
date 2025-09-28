@@ -14,14 +14,23 @@ import { revalidatePath } from "next/cache";
 export const createUser = async (user: CreateUserParams) => {
   try {
     await connectToDatabase();
-    // Logic to create a user in the database
-    const newUser = await User.create(user);
+    console.log("👉 Upserting user in DB:", user);
+
+    const newUser = await User.findOneAndUpdate(
+      { clerkId: user.clerkId }, // search by clerkId
+      user, // update with latest data
+      { new: true, upsert: true } // create if not exists
+    );
+
+    console.log("✅ User upserted in DB:", newUser);
 
     return JSON.parse(JSON.stringify(newUser));
   } catch (error) {
+    console.error("❌ DB error while upserting user:", error);
     handleError(error);
   }
 };
+
 export async function getUserById(userId: string) {
   try {
     await connectToDatabase();
