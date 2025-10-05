@@ -108,7 +108,7 @@
   .flex-between { @apply flex justify-between items-center; }
 
   .bg-dotted-pattern {
-    background-image: url('/assets/images/dotted-pattern.svg');
+    background-image: url('/assets/images/dotted-pattern.png');
   }
 
   .wrapper {
@@ -174,4 +174,39 @@
   color: white;
 }
 
+.h1-bold {
+  @apply text-[36px] font-bold leading-[44px] tracking-tight text-black;
+}
+
+.h2-bold {
+  @apply text-[30px] font-bold leading-[38px] tracking-tight text-black;
+}
+
+.h3-bold {
+  @apply text-[24px] font-semibold leading-[32px] text-black;
+}
+
+.h5-bold {
+  @apply text-[20px] font-semibold leading-[28px] text-black;
+}
+
+.p-bold-20 {
+  @apply text-[20px] font-bold leading-[28px] text-black;
+}
+
+.p-regular-20 {
+  @apply text-[20px] font-normal leading-[28px] text-gray-700;
+}
+
+.p-regular-16 {
+  @apply text-[16px] font-normal leading-[24px] text-gray-700;
+}
+
+.p-regular-14 {
+  @apply text-[14px] font-normal leading-[20px] text-gray-600;
+}
+
+.p-medium-16 {
+  @apply text-[16px] font-medium leading-[24px] text-gray-800;
+}
 }

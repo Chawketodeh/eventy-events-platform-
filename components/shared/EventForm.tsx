@@ -23,9 +23,13 @@ import { FileUploader } from "./FileUploader";
 import { useState } from "react";
 import Image from "next/image";
 import DatePicker from "react-datepicker";
+import { useUploadThing } from "@/lib/uploadthing";
 
 import "react-datepicker/dist/react-datepicker.css";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Value } from "@radix-ui/react-select";
+import { useRouter } from "next/navigation";
+import { createEvent } from "@/lib/actions/event.actions";
 type EventFormProps = {
   userId: string;
   type: "Create" | "Update";
@@ -34,20 +38,46 @@ type EventFormProps = {
 const EventForm = ({ userId, type }: EventFormProps) => {
   // 1. Define your form.
   const initialValues = eventDefaultValues;
-
   const [files, setFiles] = useState<File[]>([]);
+  const { startUpload } = useUploadThing("imageUploader");
+  const router = useRouter();
+
   const form = useForm<z.infer<typeof eventFormSchema>>({
     resolver: zodResolver(eventFormSchema),
     defaultValues: initialValues,
   });
 
-  // 2. Define a submit handler.
-  function onSubmit(values: z.infer<typeof eventFormSchema>) {
-    // Do something with the form values.
-    // ✅ This will be type-safe and validated.
-    console.log(values);
-  }
+  async function onSubmit(values: z.infer<typeof eventFormSchema>) {
+    let uploadedImageUrl = values.imageUrl;
 
+    if (files.length > 0) {
+      const uploadedImages = await startUpload(files);
+
+      if (!uploadedImages || uploadedImages.length === 0) {
+        console.error("❌ Upload failed or returned empty array");
+        return;
+      }
+
+      uploadedImageUrl = uploadedImages[0].url; // ✅ fixed property
+    }
+
+    if (type === "Create") {
+      try {
+        const newEvent = await createEvent({
+          event: { ...values, imageUrl: uploadedImageUrl },
+          userId,
+          path: "/profile",
+        });
+
+        if (newEvent) {
+          form.reset();
+          router.push(`/events/${newEvent._id}`);
+        }
+      } catch (error) {
+        console.log(error);
+      }
+    }
+  }
   return (
     <Form {...form}>
       <form
@@ -90,13 +120,14 @@ const EventForm = ({ userId, type }: EventFormProps) => {
         <div className="flex flex-col gap-5 md:flex-row">
           <FormField
             control={form.control}
-            name="Description"
+            name="description"
             render={({ field }) => (
               <FormItem className="w-full">
                 <FormControl className="h-72">
                   <Textarea
-                    placeholder="Description"
+                    placeholder="description"
                     {...field}
+                    value={field.value as string}
                     className="Textarea rounded-2xl"
                   />
                 </FormControl>

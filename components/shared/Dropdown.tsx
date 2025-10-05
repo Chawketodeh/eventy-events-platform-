@@ -5,8 +5,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ICategory } from "@/lib/database/models/category.model";
-import { startTransition, useState } from "react";
+import Category, { ICategory } from "@/lib/database/models/category.model";
+import { startTransition, useEffect, useState } from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,6 +19,10 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Input } from "../ui/input";
+import {
+  createCategory,
+  getAllCategories,
+} from "@/lib/actions/category.actions";
 type dropdownProps = {
   value?: string;
   onchangeHandler?: () => void;
@@ -26,7 +30,19 @@ type dropdownProps = {
 const Dropdown = ({ value, onchangeHandler }: dropdownProps) => {
   const [categories, setCategories] = useState<ICategory[]>([]);
   const [newCategory, setNewCategory] = useState("");
-  const handleAddCategory = () => {};
+  const handleAddCategory = () => {
+    createCategory({ categoryName: newCategory.trim() }).then((category) => {
+      setCategories((prevState) => [...prevState, category]);
+    });
+  };
+
+  useEffect(() => {
+    const getCategories = async () => {
+      const CategoryList = await getAllCategories();
+      CategoryList && setCategories(CategoryList as ICategory[]);
+    };
+    getCategories();
+  }, []);
   return (
     <Select onValueChange={onchangeHandler} defaultValue={value}>
       <SelectTrigger className="w-full select-field ">
@@ -47,10 +63,10 @@ const Dropdown = ({ value, onchangeHandler }: dropdownProps) => {
         <AlertDialog>
           <AlertDialogTrigger
             className=" cursor-pointer px-2 text-sm hover:bg-accent p-medium-14 flex w-full 
-          rounded-sm py-3 pl-8 text-secondary-500 
-          hover:bg-secondary-500 focus:text-secondary-500 bg-background shadow-lg"
+          rounded-sm py-3 pl-8 text-primary-500 
+          hover:bg-primary-500 focus:text-primary-500 bg-background shadow-lg"
           >
-            Open
+            Add new category +
           </AlertDialogTrigger>
           <AlertDialogContent className="bg-white">
             <AlertDialogHeader>
