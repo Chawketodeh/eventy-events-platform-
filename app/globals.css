@@ -131,6 +131,47 @@
   /* Inputs & Selects */
   .input-field, .select-field {
     @apply w-full rounded-md border border-border px-4 py-2 text-base shadow-sm
-           focus:border-primary focus:ring-2 focus:ring-primary transition;
+           focus:ring-2 focus:ring-primary transition;
   }
+
+  /* === React Datepicker Custom Theme === */
+.react-datepicker {
+  font-family: inherit;
+  border: none;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.08);
+}
+
+/* Header background */
+.react-datepicker__header {
+  background-color: #7c3aed; /* Evently purple */
+  color: white;
+  border-bottom: none;
+}
+
+/* Selected day */
+.react-datepicker__day--selected,
+.react-datepicker__day--keyboard-selected {
+  background-color: #7c3aed !important;
+  color: white !important;
+  border-radius: 50%;
+}
+
+/* Hovered day */
+.react-datepicker__day:hover {
+  background-color: #e9d5ff; /* light purple hover */
+}
+
+/* Selected time */
+.react-datepicker__time-list-item--selected {
+  background-color: #7c3aed !important;
+  color: white !important;
+}
+
+/* Month & time header text */
+.react-datepicker__current-month,
+.react-datepicker-time__header,
+.react-datepicker-year-header {
+  color: white;
+}
+
 }
