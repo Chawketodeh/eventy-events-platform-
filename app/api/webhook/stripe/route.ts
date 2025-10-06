@@ -1,10 +1,11 @@
-import stripe from "stripe";
+import Stripe from "stripe";
 import { NextResponse } from "next/server";
 import { createOrder } from "@/lib/actions/order.actions";
 
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+
 export async function POST(request: Request) {
   const body = await request.text();
-
   const sig = request.headers.get("stripe-signature") as string;
   const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET!;
 
@@ -12,28 +13,37 @@ export async function POST(request: Request) {
 
   try {
     event = stripe.webhooks.constructEvent(body, sig, endpointSecret);
-  } catch (err) {
-    return NextResponse.json({ message: "Webhook error", error: err });
+  } catch (err: any) {
+    console.error("Webhook signature verification failed:", err.message);
+    return new NextResponse(`Webhook Error: ${err.message}`, { status: 400 });
   }
 
-  // Get the ID and type
-  const eventType = event.type;
-
-  // CREATE
-  if (eventType === "checkout.session.completed") {
-    const { id, amount_total, metadata } = event.data.object;
+  if (event.type === "checkout.session.completed") {
+    const session = event.data.object as Stripe.Checkout.Session;
 
     const order = {
-      stripeId: id,
-      eventId: metadata?.eventId || "",
-      buyerId: metadata?.buyerId || "",
-      totalAmount: amount_total ? (amount_total / 100).toString() : "0",
+      stripeId: session.id,
+      eventId: session.metadata?.eventId || "",
+      buyerId: session.metadata?.buyerId || "",
+      totalAmount: session.amount_total
+        ? (session.amount_total / 100).toString()
+        : "0",
       createdAt: new Date(),
     };
 
-    const newOrder = await createOrder(order);
-    return NextResponse.json({ message: "OK", order: newOrder });
+    try {
+      const newOrder = await createOrder(order);
+      console.log("Order saved:", newOrder);
+    } catch (dbErr) {
+      console.error("Failed to save order:", dbErr);
+    }
   }
 
-  return new Response("", { status: 200 });
+  return new NextResponse("Webhook received", { status: 200 });
 }
+
+export const config = {
+  api: {
+    bodyParser: false,
+  },
+};

@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
     const eventType = evt.type;
     const { id } = evt.data;
 
-    console.log("📩 Webhook Event:", eventType);
+    console.log(" Webhook Event:", eventType);
 
     // === USER CREATED ===
     if (eventType === "user.created") {
@@ -43,9 +43,9 @@ export async function POST(req: NextRequest) {
       const user = {
         clerkId: id,
         email: email_addresses[0]?.email_address || "",
-        userName: username || "", // ✅ safe
-        firstName: first_name || "", // ✅ safe
-        lastName: last_name || "", // ✅ safe
+        userName: username || "", // safe
+        firstName: first_name || "", //  safe
+        lastName: last_name || "", //  safe
         photo: image_url || "",
       };
 
@@ -91,7 +91,7 @@ export async function POST(req: NextRequest) {
 
     return new Response("Webhook received", { status: 200 });
   } catch (err) {
-    console.error("❌ Error verifying webhook:", err);
+    console.error(" Error verifying webhook:", err);
     return new Response("Error verifying webhook", { status: 400 });
   }
 }
