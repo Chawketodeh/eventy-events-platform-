@@ -108,8 +108,9 @@
   .flex-between { @apply flex justify-between items-center; }
 
   .bg-dotted-pattern {
-    background-image: url('/assets/images/dotted-pattern.png');
-  }
+  background-image: radial-gradient(rgba(0, 0, 0, 0.08) 1px, transparent 1px);
+  background-size: 22px 22px;
+}
 
   .wrapper {
     @apply w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
