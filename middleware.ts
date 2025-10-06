@@ -13,8 +13,8 @@ const isIgnored = createRouteMatcher([
 const isPublic = createRouteMatcher([
   "/",
   "/events/:id",
-  "/sign-in(.*)",   // ✅ added
-  "/sign-up(.*)",   // ✅ added
+  "/sign-in(.*)", //  added
+  "/sign-up(.*)", //  added
   "/api/webhook/clerk(.*)",
   "/api/webhook/stripe(.*)",
   "/api/uploadthing(.*)",

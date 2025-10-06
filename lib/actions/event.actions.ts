@@ -1,7 +1,6 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-
 import { connectToDatabase } from "@/lib/database";
 import Event from "@/lib/database/models/event.model";
 import User from "@/lib/database/models/user.model";
@@ -13,14 +12,15 @@ import {
   UpdateEventParams,
   DeleteEventParams,
   GetAllEventsParams,
-  GetEventsByUserParams,
   GetRelatedEventsByCategoryParams,
 } from "@/types";
 
+// Get category by name (case insensitive)
 const getCategoryByName = async (name: string) => {
   return Category.findOne({ name: { $regex: name, $options: "i" } });
 };
 
+// Helper to populate Event
 const populateEvent = (query: any) => {
   return query
     .populate({
@@ -28,18 +28,22 @@ const populateEvent = (query: any) => {
       model: User,
       select: "_id firstName lastName",
     })
-    .populate({ path: "category", model: Category, select: "_id name" });
+    .populate({
+      path: "category",
+      model: Category,
+      select: "_id name",
+    });
 };
 
-// CREATE
+/* ===============================
+   CREATE EVENT
+================================ */
 export async function createEvent({ userId, event, path }: CreateEventParams) {
   try {
     await connectToDatabase();
 
-    // ✅ find user by Clerk ID instead of Mongo _id
     let organizer = await User.findOne({ clerkId: userId });
 
-    // ✅ create user automatically if missing
     if (!organizer) {
       organizer = await User.create({
         clerkId: userId,
@@ -48,7 +52,6 @@ export async function createEvent({ userId, event, path }: CreateEventParams) {
       });
     }
 
-    // ✅ link the Mongo ObjectId as the event organizer
     const newEvent = await Event.create({
       ...event,
       category: event.categoryId,
@@ -56,20 +59,20 @@ export async function createEvent({ userId, event, path }: CreateEventParams) {
     });
 
     revalidatePath(path);
-
     return JSON.parse(JSON.stringify(newEvent));
   } catch (error) {
     handleError(error);
   }
 }
 
-// GET ONE EVENT BY ID
+/* ===============================
+   GET EVENT BY ID
+================================ */
 export async function getEventById(eventId: string) {
   try {
     await connectToDatabase();
 
     const event = await populateEvent(Event.findById(eventId));
-
     if (!event) throw new Error("Event not found");
 
     return JSON.parse(JSON.stringify(event));
@@ -78,7 +81,9 @@ export async function getEventById(eventId: string) {
   }
 }
 
-// UPDATE
+/* ===============================
+   UPDATE EVENT
+================================ */
 export async function updateEvent({ userId, event, path }: UpdateEventParams) {
   try {
     await connectToDatabase();
@@ -93,15 +98,17 @@ export async function updateEvent({ userId, event, path }: UpdateEventParams) {
       { ...event, category: event.categoryId },
       { new: true }
     );
-    revalidatePath(path);
 
+    revalidatePath(path);
     return JSON.parse(JSON.stringify(updatedEvent));
   } catch (error) {
     handleError(error);
   }
 }
 
-// DELETE
+/* ===============================
+   DELETE EVENT
+================================ */
 export async function deleteEvent({ eventId, path }: DeleteEventParams) {
   try {
     await connectToDatabase();
@@ -113,30 +120,44 @@ export async function deleteEvent({ eventId, path }: DeleteEventParams) {
   }
 }
 
-// GET ALL EVENTS
+/* ===============================
+   GET ALL EVENTS (search + filter)
+================================ */
 export async function getAllEvents({
   query,
   limit = 6,
-  page,
+  page = 1,
   category,
 }: GetAllEventsParams) {
   try {
     await connectToDatabase();
 
-    const titleCondition = query
-      ? { title: { $regex: query, $options: "i" } }
-      : {};
-    const categoryCondition = category
-      ? await getCategoryByName(category)
-      : null;
-    const conditions = {
-      $and: [
-        titleCondition,
-        categoryCondition ? { category: categoryCondition._id } : {},
-      ],
-    };
-
     const skipAmount = (Number(page) - 1) * limit;
+
+    // Make sure query and category are strings only
+    query = typeof query === "string" ? query.trim() : "";
+    category = typeof category === "string" ? category.trim() : "";
+
+    // Title condition
+    const titleCondition =
+      query && query !== "" ? { title: { $regex: query, $options: "i" } } : {};
+
+    // Category condition
+    let categoryCondition = {};
+    if (category) {
+      const categoryDoc = await getCategoryByName(category);
+      if (categoryDoc) {
+        categoryCondition = { category: categoryDoc._id };
+      }
+    }
+
+    // Combine filters
+    const conditions =
+      Object.keys(titleCondition).length ||
+      Object.keys(categoryCondition).length
+        ? { $and: [titleCondition, categoryCondition] }
+        : {};
+
     const eventsQuery = Event.find(conditions)
       .sort({ createdAt: "desc" })
       .skip(skipAmount)
@@ -154,16 +175,16 @@ export async function getAllEvents({
   }
 }
 
-// GET EVENTS BY ORGANIZER
+/* ===============================
+   GET EVENTS BY USER
+================================ */
 export const getEventsByUser = async ({ userId, page = 1, limit = 6 }: any) => {
   try {
     await connectToDatabase();
 
-    // ✅ 1. Find user in Mongo by their Clerk ID
     const organizer = await User.findOne({ clerkId: userId });
     if (!organizer) throw new Error("User not found");
 
-    // ✅ 2. Use organizer._id (Mongo ObjectId) to find events
     const query = Event.find({ organizer: organizer._id })
       .sort({ createdAt: "desc" })
       .skip((page - 1) * limit)
@@ -181,7 +202,9 @@ export const getEventsByUser = async ({ userId, page = 1, limit = 6 }: any) => {
   }
 };
 
-// GET RELATED EVENTS: EVENTS WITH SAME CATEGORY
+/* ===============================
+   GET RELATED EVENTS
+================================ */
 export async function getRelatedEventsByCategory({
   categoryId,
   eventId,
@@ -192,6 +215,7 @@ export async function getRelatedEventsByCategory({
     await connectToDatabase();
 
     const skipAmount = (Number(page) - 1) * limit;
+
     const conditions = {
       $and: [{ category: categoryId }, { _id: { $ne: eventId } }],
     };

@@ -2,7 +2,7 @@ import EventForm from "@/components/shared/EventForm";
 import { auth } from "@clerk/nextjs/server";
 
 const CreateEvent = async () => {
-  const { userId } = await auth(); // ✅ use userId directly (no sessionClaims)
+  const { userId } = await auth(); //  use userId directly (no sessionClaims)
 
   if (!userId) {
     // redirect to sign-in if not authenticated

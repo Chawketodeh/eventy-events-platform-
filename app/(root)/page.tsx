@@ -1,15 +1,22 @@
+import CategoryFilter from "@/components/shared/CategoryFilter";
 import Collection from "@/components/shared/Collection";
+import Search from "@/components/shared/Search";
 import { Button } from "@/components/ui/button";
 import { getAllEvents } from "@/lib/actions/event.actions";
+import { SearchParamProps } from "@/types";
 import Image from "next/image";
 import Link from "next/link";
 
-export default async function Home() {
+export default async function Home({ searchParams }: SearchParamProps) {
+  const page = Number(searchParams?.page) || 1;
+  const searchText = (searchParams?.query as string) || "";
+  const category = (searchParams?.category as string) || "";
+
   const events = await getAllEvents({
-    query: "",
-    category: "",
+    query: searchText,
+    category,
     limit: 6,
-    page: 1,
+    page,
   });
 
   return (
@@ -60,8 +67,8 @@ export default async function Home() {
           className="flex w-full flex-col 
         gap-5 md:flex-row"
         >
-          Search <br />
-          CategoryFilter
+          <Search />
+          <CategoryFilter />
         </div>
 
         <Collection

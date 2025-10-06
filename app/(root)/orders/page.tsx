@@ -5,7 +5,7 @@ import { IOrderItem } from "@/lib/database/models/order.model";
 import Search from "@/components/shared/Search";
 
 const Orders = async ({ searchParams }: SearchParamProps) => {
-  const params = await searchParams; // ✅ await searchParams first
+  const params = await searchParams; // await searchParams first
   const eventId = (params?.eventId as string) || "";
   const searchText = (params?.query as string) || "";
 

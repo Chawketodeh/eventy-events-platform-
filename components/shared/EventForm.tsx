@@ -64,11 +64,11 @@ const EventForm = ({ userId, type, event, eventId }: EventFormProps) => {
       const uploadedImages = await startUpload(files);
 
       if (!uploadedImages || uploadedImages.length === 0) {
-        console.error("❌ Upload failed or returned empty array");
+        console.error(" Upload failed or returned empty array");
         return;
       }
 
-      uploadedImageUrl = uploadedImages[0].url; // ✅ fixed property
+      uploadedImageUrl = uploadedImages[0].url; //  fixed property
     }
 
     if (type === "Update") {
