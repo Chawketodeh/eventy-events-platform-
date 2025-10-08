@@ -10,7 +10,11 @@ import Image from "next/image";
 
 const EventDetails = async ({ params, searchParams }: SearchParamProps) => {
   const { id } = params || {};
-  const event = await getEventById(id || "");
+  if (!id) {
+    return <p className="text-center text-red-500">Event not found</p>;
+  }
+
+  const event = await getEventById(id);
 
   const relatedEvents = await getRelatedEventsByCategory({
     categoryId: event.category._id,
