@@ -1,15 +1,24 @@
 import { getOrdersByEvent } from "@/lib/actions/order.actions";
 import { formatDateTime, formatPrice } from "@/lib/utils";
-import { SearchParamProps } from "@/types";
 import { IOrderItem } from "@/lib/database/models/order.model";
 import Search from "@/components/shared/Search";
 
-const Orders = async ({ searchParams }: SearchParamProps) => {
-  const params = await searchParams; // await searchParams first
-  const eventId = (params?.eventId as string) || "";
-  const searchText = (params?.query as string) || "";
+// Fix: define the correct type for Next.js 15.5+
+type PageProps = {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+};
 
-  const orders = await getOrdersByEvent({ eventId, searchString: searchText });
+const Orders = async ({ searchParams }: PageProps) => {
+  // Await the searchParams (it’s a Promise now)
+  const resolvedSearchParams = await searchParams;
+
+  const eventId = (resolvedSearchParams?.eventId as string) || "";
+  const searchText = (resolvedSearchParams?.query as string) || "";
+
+  const orders = await getOrdersByEvent({
+    eventId,
+    searchString: searchText,
+  });
 
   return (
     <>

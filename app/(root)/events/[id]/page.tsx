@@ -5,11 +5,19 @@ import {
   getRelatedEventsByCategory,
 } from "@/lib/actions/event.actions";
 import { formatDateTime } from "@/lib/utils";
-import { SearchParamProps } from "@/types";
 import Image from "next/image";
 
-const EventDetails = async ({ params, searchParams }: SearchParamProps) => {
-  const { id } = params || {};
+// ✅ Next.js 15.5+ expects both `params` and `searchParams` as Promises
+type PageProps = {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+};
+
+const EventDetails = async ({ params, searchParams }: PageProps) => {
+  // ✅ Await both params and searchParams
+  const { id } = await params;
+  const resolvedSearchParams = await searchParams;
+
   if (!id) {
     return <p className="text-center text-red-500">Event not found</p>;
   }
@@ -19,7 +27,7 @@ const EventDetails = async ({ params, searchParams }: SearchParamProps) => {
   const relatedEvents = await getRelatedEventsByCategory({
     categoryId: event.category._id,
     eventId: event._id,
-    page: searchParams?.page as string,
+    page: resolvedSearchParams?.page as string,
   });
 
   return (
@@ -37,6 +45,7 @@ const EventDetails = async ({ params, searchParams }: SearchParamProps) => {
           <div className="flex w-full flex-col gap-8 p-5 md:p-10">
             <div className="flex flex-col gap-6">
               <h2 className="h2-bold">{event.title}</h2>
+
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                 <div className="flex gap-3">
                   <p className="p-bold-20 rounded-full bg-green-500/10 px-5 py-2 text-green-700">
@@ -47,17 +56,16 @@ const EventDetails = async ({ params, searchParams }: SearchParamProps) => {
                   </p>
                 </div>
 
-                <p className="p-medium-18 ml-2 mt-2 sm:mt-0 ">
+                <p className="p-medium-18 ml-2 mt-2 sm:mt-0">
                   by{" "}
                   <span className="text-primary-500">
-                    {event.organizer.firstName}
-                    {event.organizer.lastName}
+                    {event.organizer.firstName} {event.organizer.lastName}
                   </span>
                 </p>
               </div>
             </div>
 
-            {/* checkout button */}
+            {/* Checkout button */}
             <CheckoutButton event={event} />
 
             <div className="flex flex-col gap-5">
@@ -79,6 +87,7 @@ const EventDetails = async ({ params, searchParams }: SearchParamProps) => {
                   </p>
                 </div>
               </div>
+
               <div className="p-regular-20 flex items gap-3">
                 <Image
                   src="/assets/icons/location.svg"
