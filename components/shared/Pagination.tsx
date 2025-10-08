@@ -18,8 +18,12 @@ const Pagination = ({
   const router = useRouter();
   const searchParams = useSearchParams();
 
+  //  Always trust the URL value
+  const currentPage =
+    Number(searchParams.get(urlParamName)) || Number(page) || 1;
+
   const onClick = (btnType: "next" | "prev") => {
-    let newPage = Number(page);
+    let newPage = currentPage;
 
     if (btnType === "next" && newPage < totalPages) newPage++;
     if (btnType === "prev" && newPage > 1) newPage--;
@@ -33,6 +37,11 @@ const Pagination = ({
     router.push(newUrl, { scroll: false });
   };
 
+  //  Fix logic for disabling buttons
+  const disablePrev = currentPage <= 1;
+  const disableNext =
+    totalPages === 0 || currentPage >= totalPages || currentPage > totalPages;
+
   return (
     <div className="flex justify-center items-center gap-3 mt-8">
       <Button
@@ -40,19 +49,21 @@ const Pagination = ({
         size="lg"
         variant="outline"
         onClick={() => onClick("prev")}
-        disabled={Number(page) <= 1}
+        disabled={disablePrev}
       >
         Previous
       </Button>
+
       <span className="text-sm font-medium text-gray-600">
-        Page {page} of {totalPages}
+        Page {currentPage} of {totalPages || 1}
       </span>
+
       <Button
         className="w-28"
         size="lg"
         variant="outline"
         onClick={() => onClick("next")}
-        disabled={Number(page) >= totalPages}
+        disabled={disableNext}
       >
         Next
       </Button>
