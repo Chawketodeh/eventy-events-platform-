@@ -1,5 +1,4 @@
 import { createUploadthing, type FileRouter } from "uploadthing/next";
-import { UploadThingError } from "uploadthing/server";
 
 const f = createUploadthing();
 
@@ -10,8 +9,8 @@ export const ourFileRouter = {
       return { userId: "demo-user" };
     })
     .onUploadComplete(async ({ metadata, file }) => {
-      console.log("✅ Upload complete for user:", metadata.userId);
-      console.log("✅ File URL:", file.url);
+      console.log(" Upload complete for user:", metadata.userId);
+      console.log(" File URL:", file.url);
 
       // must return something
       return { uploadedBy: metadata.userId, url: file.url };
