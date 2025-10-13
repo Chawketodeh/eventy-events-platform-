@@ -236,3 +236,13 @@ export async function getRelatedEventsByCategory({
     handleError(error);
   }
 }
+
+export async function deleteEventsByUser(clerkId: string) {
+  try {
+    await connectToDatabase();
+    const result = await Event.deleteMany({ clerkId });
+    console.log(` Deleted ${result.deletedCount} events for user ${clerkId}`);
+  } catch (error) {
+    console.error(" Error deleting user events:", error);
+  }
+}
