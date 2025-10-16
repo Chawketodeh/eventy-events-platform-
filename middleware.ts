@@ -8,7 +8,7 @@ const isIgnored = createRouteMatcher([
   "/api/uploadthing",
 ]);
 
-// 👇 publicRoutes: accessible without auth
+// Public routes (accessible without auth)
 const isPublic = createRouteMatcher([
   "/",
   "/events/:id",
@@ -24,28 +24,25 @@ export default clerkMiddleware(async (auth, req) => {
 
   const { userId, sessionClaims } = await auth();
 
-  //  Read admin flag correctly
+  // Correctly read admin flag
   const isAdmin =
     sessionClaims?.isAdmin === true || sessionClaims?.isAdmin === "true";
 
-  console.log(" Middleware — Admin flag:", isAdmin);
-
   const url = new URL(req.url);
 
-  //  If admin logs in and tries to access home or sign-in, redirect to /admin
-  if (
-    (url.pathname === "/" || url.pathname.startsWith("/sign-in")) &&
-    isAdmin
-  ) {
+  console.log("Middleware — Admin flag:", isAdmin, "URL:", url.pathname);
+
+  // Always redirect admin to /admin when visiting home
+  if (url.pathname === "/" && isAdmin) {
     return NextResponse.redirect(new URL("/admin", req.url));
   }
 
-  //  Block non-admin users from /admin routes
+  //  Block non-admins from /admin
   if (url.pathname.startsWith("/admin") && !isAdmin) {
     return NextResponse.redirect(new URL("/", req.url));
   }
 
-  //  Protect private routes
+  // Protect private routes
   if (!isPublic(req)) await auth.protect();
 
   return NextResponse.next();
@@ -53,6 +50,7 @@ export default clerkMiddleware(async (auth, req) => {
 
 export const config = {
   matcher: [
+    // Match everything except static files
     "/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
     "/(api|trpc)(.*)",
   ],
