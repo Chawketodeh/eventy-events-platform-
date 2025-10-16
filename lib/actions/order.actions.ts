@@ -87,7 +87,7 @@ export async function getOrdersByEvent({
     const eventObjectId =
       typeof eventId === "string" ? new ObjectId(eventId) : eventId;
 
-    console.log("🔍 Fetching orders for event:", eventObjectId);
+    console.log(" Fetching orders for event:", eventObjectId);
 
     const orders = await Order.aggregate([
       {

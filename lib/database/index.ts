@@ -6,7 +6,7 @@ export const connectToDatabase = async () => {
   const MONGODB_URI = process.env.MONGODB_URI;
 
   if (!MONGODB_URI) {
-    throw new Error("❌ MONGODB_URI is not defined");
+    throw new Error(" MONGODB_URI is not defined");
   }
 
   if (cached.conn) {
@@ -23,11 +23,11 @@ export const connectToDatabase = async () => {
     }
 
     cached.conn = await cached.promise;
-    console.log("✅ Connected to MongoDB");
+    console.log(" Connected to MongoDB");
     (global as any).mongoose = cached;
     return cached.conn;
   } catch (error) {
-    console.error("❌ MongoDB connection error:", error);
+    console.error(" MongoDB connection error:", error);
     throw new Error("Failed to connect to MongoDB");
   }
 };

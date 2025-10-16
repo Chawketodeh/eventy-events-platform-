@@ -14,7 +14,7 @@ import { revalidatePath } from "next/cache";
 export const createUser = async (user: CreateUserParams) => {
   try {
     await connectToDatabase();
-    console.log("👉 Upserting user in DB:", user);
+    console.log(" Upserting user in DB:", user);
 
     const newUser = await User.findOneAndUpdate(
       { clerkId: user.clerkId }, // search by clerkId
@@ -22,11 +22,11 @@ export const createUser = async (user: CreateUserParams) => {
       { new: true, upsert: true, setDefaultsOnInsert: true } // create if not exists + apply defaults
     );
 
-    console.log("✅ User upserted in DB:", newUser);
+    console.log(" User upserted in DB:", newUser);
 
     return JSON.parse(JSON.stringify(newUser));
   } catch (error) {
-    console.error("❌ DB error while upserting user:", error);
+    console.error(" DB error while upserting user:", error);
     handleError(error);
   }
 };
