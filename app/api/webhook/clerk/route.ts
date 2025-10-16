@@ -1,5 +1,5 @@
 import { createUser, deleteUser, updateUser } from "@/lib/actions/user.actions";
-import { deleteEventsByUser } from "@/lib/actions/event.actions"; //  new line
+import { deleteEventsByUser } from "@/lib/actions/event.actions";
 import { createClerkClient } from "@clerk/backend";
 import { Webhook } from "svix";
 import { headers } from "next/headers";
@@ -28,9 +28,9 @@ export async function POST(req: NextRequest) {
     const eventType = evt.type;
     const { id } = evt.data;
 
-    console.log(" Webhook Event:", eventType);
+    console.log("Webhook Event:", eventType);
 
-    // === USER CREATED ===
+    // USER CREATED
     if (eventType === "user.created") {
       const { email_addresses, image_url, first_name, last_name, username } =
         evt.data;
@@ -46,6 +46,7 @@ export async function POST(req: NextRequest) {
 
       const newUser = await createUser(user);
 
+      // attach internal DB ID to Clerk metadata
       const clerkClient = createClerkClient({
         secretKey: process.env.CLERK_SECRET_KEY!,
       });
@@ -61,7 +62,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: "OK", user: newUser });
     }
 
-    // === USER UPDATED ===
+    // USER UPDATED
     if (eventType === "user.updated") {
       const { image_url, first_name, last_name, username } = evt.data;
 
@@ -73,18 +74,14 @@ export async function POST(req: NextRequest) {
       };
 
       const updatedUser = await updateUser(id!, user);
-
       return NextResponse.json({ message: "OK", user: updatedUser });
     }
 
-    // === USER DELETED ===
+    // USER DELETED
     if (eventType === "user.deleted") {
-      console.log(" Deleting user and their events:", id);
+      console.log("Deleting user and their events:", id);
 
-      // delete user from your DB
       const deletedUser = await deleteUser(id!);
-
-      // delete all their events
       await deleteEventsByUser(id!);
 
       return NextResponse.json({
@@ -95,7 +92,7 @@ export async function POST(req: NextRequest) {
 
     return new Response("Webhook received", { status: 200 });
   } catch (err) {
-    console.error(" Error verifying webhook:", err);
+    console.error("Error verifying webhook:", err);
     return new Response("Error verifying webhook", { status: 400 });
   }
 }

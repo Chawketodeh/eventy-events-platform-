@@ -7,14 +7,14 @@ import {
 import { formatDateTime } from "@/lib/utils";
 import Image from "next/image";
 
-// ✅ Next.js 15.5+ expects both `params` and `searchParams` as Promises
+//  Next.js 15.5+ expects both `params` and `searchParams` as Promises
 type PageProps = {
   params: Promise<{ id: string }>;
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 };
 
 const EventDetails = async ({ params, searchParams }: PageProps) => {
-  // ✅ Await both params and searchParams
+  //  Await both params and searchParams
   const { id } = await params;
   const resolvedSearchParams = await searchParams;
 
@@ -59,7 +59,7 @@ const EventDetails = async ({ params, searchParams }: PageProps) => {
                 <p className="p-medium-18 ml-2 mt-2 sm:mt-0">
                   by{" "}
                   <span className="text-primary-500">
-                    {event.organizer.firstName} {event.organizer.lastName}
+                    {event.organizer?.firstName} {event.organizer?.lastName}
                   </span>
                 </p>
               </div>

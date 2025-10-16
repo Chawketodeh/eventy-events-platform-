@@ -12,27 +12,38 @@ type CardProps = {
 };
 
 const Card = async ({ event, hasOrderLink, hidePrice }: CardProps) => {
-  const { sessionClaims } = await auth();
-  const userId = sessionClaims?.userId as string;
+  const { userId, sessionClaims } = await auth();
 
-  const isEventCreator = event.organizer?._id.toString() === userId;
+  //  Check for admin privileges (from Clerk metadata)
+  const isAdmin =
+    sessionClaims?.isAdmin === true || sessionClaims?.isAdmin === "true";
+
+  //  Organizer of event (from MongoDB)
+  const eventOrganizerClerkId = event.organizer?.clerkId;
+
+  //  Compare with logged-in Clerk userId (not Mongo _id)
+  const isEventCreator = userId && eventOrganizerClerkId === userId;
+
+  //  Only show edit/delete for the event owner OR admin
+  const canManageEvent = isEventCreator || isAdmin;
+
   return (
     <div
       className="group relative flex min-h-[380px]
   w-full max-w-[400px] flex-col overflow-hidden rounded-xl bg-white shadow-md
-   transition-all hover:shadow-lg md:min-h-[438px] "
+   transition-all hover:shadow-lg md:min-h-[438px]"
     >
       <Link
         href={`/events/${event._id}`}
         style={{ backgroundImage: `url(${event.imageUrl})` }}
         className="flex-center flex-grow bg-gray-50 bg-cover bg-center text-gray-500"
       />
-      {/* IS event creator... */}
-      {isEventCreator && !hidePrice && (
+
+      {/*  Only show for admins or event owners */}
+      {canManageEvent && !hidePrice && (
         <div
           className="absolute right-2 top-2 flex flex-col gap-4
-        rounded-xl bg-white p-3 shadow-sm transition-all
-        "
+        rounded-xl bg-white p-3 shadow-sm transition-all"
         >
           <Link href={`/events/${event._id}/update`}>
             <Image
@@ -45,6 +56,7 @@ const Card = async ({ event, hasOrderLink, hidePrice }: CardProps) => {
           <DeleteConfirmation eventId={event._id.toString()} />
         </div>
       )}
+
       <div className="flex min-h-[230px] flex-col gap-3 p-5 md:gap-4">
         {!hidePrice && (
           <div className="flex gap-2">
@@ -53,36 +65,34 @@ const Card = async ({ event, hasOrderLink, hidePrice }: CardProps) => {
             </span>
             <p
               className="p-semibold-14 w-min rounded-full bg-gray-500/10 px-4 py-1
-             text-gray-500 line-clamp-1 "
+             text-gray-500 line-clamp-1"
             >
               {event.category?.name}
             </p>
           </div>
         )}
-        <p className=" p-medium-16 p-medium-18 text-gray-500">
+
+        <p className="p-medium-16 p-medium-18 text-gray-500">
           {formatDateTime(event.startDateTime).dateTime}
         </p>
+
         <Link href={`/events/${event._id}`}>
-          {" "}
           <p className="p-medium-16 md:p-medium-20 line-clamp-2 flex-1 text-black">
             {event.title}
           </p>
         </Link>
 
-        <div className=" flex-between w-full">
-          <p
-            className="p-medium-14 md:p-medium-16 text-gray-600
-          "
-          >
-            {event.organizer?.firstName}
-            {event.organizer?.lastName}
+        <div className="flex-between w-full">
+          <p className="p-medium-14 md:p-medium-16 text-gray-600">
+            {event.organizer?.firstName} {event.organizer?.lastName}
           </p>
+
           {hasOrderLink && (
             <Link href={`/orders?eventId=${event._id}`} className="flex gap-2">
               <p className="text-primary-500">Order details</p>
               <Image
                 src="/assets/icons/arrow.svg"
-                alt="Search"
+                alt="arrow"
                 width={10}
                 height={10}
               />
@@ -93,4 +103,5 @@ const Card = async ({ event, hasOrderLink, hidePrice }: CardProps) => {
     </div>
   );
 };
+
 export default Card;
