@@ -12,6 +12,9 @@ export interface IEvent extends Document {
   price: string;
   isFree: boolean;
   url?: string;
+  latitude: Number;
+  longitude: Number;
+
   category?: { _id: string; name: string };
   organizer?: {
     _id: string;

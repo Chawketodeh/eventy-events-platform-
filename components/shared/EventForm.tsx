@@ -192,24 +192,23 @@ const EventForm = ({ userId, type, event, eventId }: EventFormProps) => {
             render={({ field }) => (
               <FormItem className="w-full">
                 <FormControl>
-                  <div
-                    className="flex-center has-[54px] w-full overflow-hidden
-                  rounded-full bg-gray-50 px-4 py-2"
-                  >
+                  <div className="flex items-center w-full rounded-full bg-gray-50 px-3 py-2">
                     <Image
                       src="/assets/icons/location-grey.svg"
-                      alt="calendar"
-                      width={24}
-                      height={24}
+                      alt="location"
+                      width={28}
+                      height={28}
+                      className="mr-2 flex-shrink-0"
                     />
-                    <LocationInput
-                      value={field.value}
-                      onChange={(val, lat, lng) => {
-                        field.onChange(val);
-                        // optional: save lat/lng if your schema includes them
-                        console.log("Selected:", val, lat, lng);
-                      }}
-                    />
+                    <div className="flex-1 min-w-0">
+                      <LocationInput
+                        value={field.value}
+                        onChange={(val, lat, lng) => {
+                          field.onChange(val);
+                          console.log("Selected:", val, lat, lng);
+                        }}
+                      />
+                    </div>
                   </div>
                 </FormControl>
                 <FormMessage />

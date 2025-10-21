@@ -14,6 +14,8 @@ import {
 } from "@reach/combobox";
 import "@reach/combobox/styles.css";
 import { GoogleMap, MarkerF } from "@react-google-maps/api";
+import { motion, AnimatePresence } from "framer-motion";
+import Image from "next/image";
 
 type LocationInputProps = {
   value?: string;
@@ -26,7 +28,6 @@ export default function LocationInput({ value, onChange }: LocationInputProps) {
     null
   );
 
-  // Always call the hook
   const {
     ready,
     value: inputValue,
@@ -37,12 +38,10 @@ export default function LocationInput({ value, onChange }: LocationInputProps) {
   } = usePlacesAutocomplete({
     debounce: 400,
     initOnMount: false,
-    requestOptions: {
-      componentRestrictions: { country: ["tn"] },
-    },
+    requestOptions: { componentRestrictions: { country: ["tn"] } },
   });
 
-  // Wait for Google script, then init hook
+  // Wait for Google Maps API
   useEffect(() => {
     const check = () => {
       if (
@@ -58,23 +57,21 @@ export default function LocationInput({ value, onChange }: LocationInputProps) {
     check();
   }, [init]);
 
-  // Keep synced with form value
+  // Keep input synced with form value
   useEffect(() => {
-    if (value && value !== inputValue) {
-      setValue(value, false);
-    }
+    if (value && value !== inputValue) setValue(value, false);
   }, [value]);
 
-  //  Handle select
   const handleSelect = async (address: string) => {
     setValue(address, false);
     clearSuggestions();
-
     try {
       const results = await getGeocode({ address });
       const { lat, lng } = await getLatLng(results[0]);
+
+      // update the state and send data to parent form
       setPosition({ lat, lng });
-      onChange(address, lat, lng);
+      onChange(address, lat, lng); // ← add this line here
     } catch (error) {
       console.error("Error getting location:", error);
     }
@@ -88,7 +85,8 @@ export default function LocationInput({ value, onChange }: LocationInputProps) {
           onChange={(e) => setValue(e.target.value)}
           disabled={!isReady || !ready}
           placeholder={isReady ? "Enter a location" : "Loading Google Maps..."}
-          className="flex-1 border-none bg-gray-50 outline-none text-center focus:ring-0"
+          className="w-full border-none bg-transparent outline-none text-gray-800 placeholder:text-gray-400 focus:ring-0 truncate"
+          title={inputValue}
         />
 
         {isReady && (
@@ -103,20 +101,22 @@ export default function LocationInput({ value, onChange }: LocationInputProps) {
         )}
       </Combobox>
 
-      {/*  Mini Map Preview */}
       {position && (
-        <div className="mt-3 h-56 w-full rounded-xl overflow-hidden border border-gray-200">
-          <GoogleMap
-            center={position}
-            zoom={14}
-            mapContainerStyle={{ width: "100%", height: "100%" }}
-            options={{
-              disableDefaultUI: true,
-              zoomControl: true,
-            }}
-          >
-            <MarkerF position={position} />
-          </GoogleMap>
+        <div className="relative mt-2 rounded-xl overflow-hidden border border-gray-200 bg-gray-50 shadow-sm">
+          {/* Map preview (increased height for better visibility) */}
+          <div className="w-full h-[180px] overflow-hidden">
+            <GoogleMap
+              center={position}
+              zoom={13}
+              mapContainerStyle={{ width: "100%", height: "100%" }}
+              options={{
+                disableDefaultUI: true,
+                zoomControl: true,
+              }}
+            >
+              <MarkerF position={position} />
+            </GoogleMap>
+          </div>
         </div>
       )}
     </div>

@@ -6,6 +6,7 @@ import {
 } from "@/lib/actions/event.actions";
 import { formatDateTime } from "@/lib/utils";
 import Image from "next/image";
+import EventMap from "@/components/shared/EventMap";
 
 //  Next.js 15.5+ expects both `params` and `searchParams` as Promises
 type PageProps = {
@@ -104,6 +105,9 @@ const EventDetails = async ({ params, searchParams }: PageProps) => {
                 />
                 <p className="p-medium-16 lg:p-regular-20">{event.location}</p>
               </div>
+              {event.latitude && event.longitude && (
+                <EventMap lat={event.latitude} lng={event.longitude} />
+              )}
             </div>
 
             <div className="flex flex-col gap-2">
