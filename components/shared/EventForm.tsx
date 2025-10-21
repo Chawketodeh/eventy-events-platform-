@@ -31,6 +31,7 @@ import { Value } from "@radix-ui/react-select";
 import { useRouter } from "next/navigation";
 import { createEvent, updateEvent } from "@/lib/actions/event.actions";
 import { IEvent } from "@/lib/database/models/event.model";
+import LocationInput from "../ui/LocationInput";
 type EventFormProps = {
   userId: string;
   type: "Create" | "Update";
@@ -201,10 +202,13 @@ const EventForm = ({ userId, type, event, eventId }: EventFormProps) => {
                       width={24}
                       height={24}
                     />
-                    <Input
-                      placeholder="Event location "
-                      {...field}
-                      className="input-field"
+                    <LocationInput
+                      value={field.value}
+                      onChange={(val, lat, lng) => {
+                        field.onChange(val);
+                        // optional: save lat/lng if your schema includes them
+                        console.log("Selected:", val, lat, lng);
+                      }}
                     />
                   </div>
                 </FormControl>

@@ -65,8 +65,15 @@ const EventDetails = async ({ params, searchParams }: PageProps) => {
               </div>
             </div>
 
-            {/* Checkout button */}
-            <CheckoutButton event={event} />
+            {/* Show checkout or expired message */}
+            {new Date(event.endDateTime) < new Date() ? (
+              <p className="text-red-500 text-lg">
+                Event expired on {formatDateTime(event.endDateTime).dateOnly} at{" "}
+                {formatDateTime(event.endDateTime).timeOnly}
+              </p>
+            ) : (
+              <CheckoutButton event={event} />
+            )}
 
             <div className="flex flex-col gap-5">
               <div className="flex gap-2 md:gap-3">

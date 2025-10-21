@@ -101,3 +101,15 @@ export const handleError = (error: unknown) => {
   console.error(error);
   throw new Error(typeof error === "string" ? error : JSON.stringify(error));
 };
+
+export async function reverseGeocode(lat: number, lng: number) {
+  const key = process.env.NEXT_PUBLIC_GEOCODING_API_KEY;
+  if (!key) throw new Error("Missing NEXT_PUBLIC_GEOCODING_API_KEY");
+
+  const res = await fetch(
+    `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${key}`
+  );
+  const data = await res.json();
+  const address = data.results[0]?.formatted_address || null;
+  return address;
+}

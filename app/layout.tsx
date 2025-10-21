@@ -1,8 +1,8 @@
 import "./globals.css";
-
 import { ClerkProvider } from "@clerk/nextjs";
 import type { Metadata } from "next";
 import { Poppins } from "next/font/google";
+import Script from "next/script";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -22,9 +22,17 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>
-        {/* ensures safelisted classes exist */}
-        <ClerkProvider>{children}</ClerkProvider>
+      <body className={poppins.variable}>
+        <ClerkProvider>
+          {children}
+
+          {/*  Load Google Maps JS once globally */}
+          <Script
+            id="google-maps"
+            strategy="afterInteractive"
+            src={`https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&libraries=places`}
+          />
+        </ClerkProvider>
       </body>
     </html>
   );
