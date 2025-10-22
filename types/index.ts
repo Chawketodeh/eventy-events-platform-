@@ -22,6 +22,8 @@ export type CreateEventParams = {
     title: string;
     description: string;
     location: string;
+    latitude?: number; // ✅ correct
+    longitude?: number;
     imageUrl: string;
     startDateTime: Date;
     endDateTime: Date;
@@ -41,6 +43,8 @@ export type UpdateEventParams = {
     imageUrl: string;
     description: string;
     location: string;
+    latitude?: number; // ✅ added
+    longitude?: number; // ✅ added
     startDateTime: Date;
     endDateTime: Date;
     categoryId: string;

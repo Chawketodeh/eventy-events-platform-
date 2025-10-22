@@ -5,6 +5,8 @@ export interface IEvent extends Document {
   title: string;
   description?: string;
   location?: string;
+  latitude?: number; //  should be number
+  longitude?: number; // should be number
   createdAt: Date;
   imageUrl: string;
   startDateTime: Date;
@@ -12,9 +14,6 @@ export interface IEvent extends Document {
   price: string;
   isFree: boolean;
   url?: string;
-  latitude: Number;
-  longitude: Number;
-
   category?: { _id: string; name: string };
   organizer?: {
     _id: string;
@@ -28,6 +27,8 @@ const EventSchema = new Schema({
   title: { type: String, required: true },
   description: { type: String },
   location: { type: String },
+  latitude: { type: Number }, //  added
+  longitude: { type: Number }, //  added
   createdAt: { type: Date, default: Date.now },
   imageUrl: { type: String, required: true },
   startDateTime: { type: Date, default: Date.now },

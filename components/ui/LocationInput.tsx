@@ -14,8 +14,6 @@ import {
 } from "@reach/combobox";
 import "@reach/combobox/styles.css";
 import { GoogleMap, MarkerF } from "@react-google-maps/api";
-import { motion, AnimatePresence } from "framer-motion";
-import Image from "next/image";
 
 type LocationInputProps = {
   value?: string;
@@ -41,23 +39,20 @@ export default function LocationInput({ value, onChange }: LocationInputProps) {
     requestOptions: { componentRestrictions: { country: ["tn"] } },
   });
 
-  // Wait for Google Maps API
+  // ✅ Wait until Google Maps is ready before initializing autocomplete
   useEffect(() => {
-    const check = () => {
-      if (
-        typeof window !== "undefined" &&
-        (window as any).google?.maps?.places
-      ) {
+    const waitForMaps = () => {
+      if (typeof window !== "undefined" && window.google?.maps?.places) {
         setIsReady(true);
         init();
       } else {
-        setTimeout(check, 300);
+        setTimeout(waitForMaps, 300);
       }
     };
-    check();
+    waitForMaps();
   }, [init]);
 
-  // Keep input synced with form value
+  // ✅ Keep input synced with parent form value
   useEffect(() => {
     if (value && value !== inputValue) setValue(value, false);
   }, [value]);
@@ -65,15 +60,19 @@ export default function LocationInput({ value, onChange }: LocationInputProps) {
   const handleSelect = async (address: string) => {
     setValue(address, false);
     clearSuggestions();
+
     try {
       const results = await getGeocode({ address });
       const { lat, lng } = await getLatLng(results[0]);
 
-      // update the state and send data to parent form
+      //  Save coordinates locally
       setPosition({ lat, lng });
-      onChange(address, lat, lng); // ← add this line here
+
+      //  Send to parent form (EventForm)
+      console.log("📍 Selected:", address, lat, lng);
+      onChange(address, lat, lng);
     } catch (error) {
-      console.error("Error getting location:", error);
+      console.error("Error getting geocode:", error);
     }
   };
 
@@ -84,39 +83,35 @@ export default function LocationInput({ value, onChange }: LocationInputProps) {
           value={inputValue}
           onChange={(e) => setValue(e.target.value)}
           disabled={!isReady || !ready}
-          placeholder={isReady ? "Enter a location" : "Loading Google Maps..."}
+          placeholder={
+            isReady ? "Enter a location..." : "Loading Google Maps..."
+          }
           className="w-full border-none bg-transparent outline-none text-gray-800 placeholder:text-gray-400 focus:ring-0 truncate"
-          title={inputValue}
         />
 
-        {isReady && (
-          <ComboboxPopover className="z-50 bg-white shadow-md rounded-md mt-2">
-            <ComboboxList>
-              {status === "OK" &&
-                data.map(({ place_id, description }) => (
-                  <ComboboxOption key={place_id} value={description} />
-                ))}
-            </ComboboxList>
-          </ComboboxPopover>
-        )}
+        <ComboboxPopover className="z-50 bg-white shadow-md rounded-md mt-2">
+          <ComboboxList>
+            {status === "OK" &&
+              data.map(({ place_id, description }) => (
+                <ComboboxOption key={place_id} value={description} />
+              ))}
+          </ComboboxList>
+        </ComboboxPopover>
       </Combobox>
 
       {position && (
-        <div className="relative mt-2 rounded-xl overflow-hidden border border-gray-200 bg-gray-50 shadow-sm">
-          {/* Map preview (increased height for better visibility) */}
-          <div className="w-full h-[180px] overflow-hidden">
-            <GoogleMap
-              center={position}
-              zoom={13}
-              mapContainerStyle={{ width: "100%", height: "100%" }}
-              options={{
-                disableDefaultUI: true,
-                zoomControl: true,
-              }}
-            >
-              <MarkerF position={position} />
-            </GoogleMap>
-          </div>
+        <div className="mt-3 rounded-xl overflow-hidden border border-gray-200 shadow-sm">
+          <GoogleMap
+            center={position}
+            zoom={14}
+            mapContainerStyle={{ width: "100%", height: "180px" }}
+            options={{
+              disableDefaultUI: true,
+              zoomControl: true,
+            }}
+          >
+            <MarkerF position={position} />
+          </GoogleMap>
         </div>
       )}
     </div>

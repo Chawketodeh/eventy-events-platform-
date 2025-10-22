@@ -57,7 +57,17 @@ export async function createEvent({ userId, event, path }: CreateEventParams) {
     }
 
     const newEvent = await Event.create({
-      ...event,
+      title: event.title,
+      description: event.description,
+      location: event.location,
+      latitude: event.latitude, //  added
+      longitude: event.longitude, // added
+      imageUrl: event.imageUrl,
+      startDateTime: event.startDateTime,
+      endDateTime: event.endDateTime,
+      price: event.price,
+      isFree: event.isFree,
+      url: event.url,
       category: event.categoryId,
       organizer: organizer._id,
     });
@@ -114,7 +124,20 @@ export async function updateEvent({ userId, event, path }: UpdateEventParams) {
 
     const updatedEvent = await Event.findByIdAndUpdate(
       event._id,
-      { ...event, category: event.categoryId },
+      {
+        title: event.title,
+        description: event.description,
+        location: event.location,
+        latitude: event.latitude, //  added
+        longitude: event.longitude, //  added
+        imageUrl: event.imageUrl,
+        startDateTime: event.startDateTime,
+        endDateTime: event.endDateTime,
+        price: event.price,
+        isFree: event.isFree,
+        url: event.url,
+        category: event.categoryId,
+      },
       { new: true }
     );
 

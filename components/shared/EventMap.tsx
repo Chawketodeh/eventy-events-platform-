@@ -1,6 +1,6 @@
 "use client";
 
-import { GoogleMap, MarkerF, LoadScript } from "@react-google-maps/api";
+import { GoogleMap, MarkerF, useJsApiLoader } from "@react-google-maps/api";
 
 type EventMapProps = {
   lat: number;
@@ -8,23 +8,27 @@ type EventMapProps = {
 };
 
 export default function EventMap({ lat, lng }: EventMapProps) {
+  //  Load the Google Maps API once
+  const { isLoaded } = useJsApiLoader({
+    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
+    libraries: ["places"],
+  });
+
+  if (!isLoaded) return <p>Loading map...</p>;
+
   return (
     <div className="mt-3 rounded-xl overflow-hidden border border-gray-200 shadow-sm">
-      <LoadScript
-        googleMapsApiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!}
+      <GoogleMap
+        center={{ lat, lng }}
+        zoom={14}
+        mapContainerStyle={{ width: "100%", height: "250px" }}
+        options={{
+          disableDefaultUI: true,
+          zoomControl: true,
+        }}
       >
-        <GoogleMap
-          center={{ lat, lng }}
-          zoom={14}
-          mapContainerStyle={{ width: "100%", height: "250px" }}
-          options={{
-            disableDefaultUI: true,
-            zoomControl: true,
-          }}
-        >
-          <MarkerF position={{ lat, lng }} />
-        </GoogleMap>
-      </LoadScript>
+        <MarkerF position={{ lat, lng }} />
+      </GoogleMap>
     </div>
   );
 }

@@ -89,6 +89,7 @@ const EventDetails = async ({ params, searchParams }: PageProps) => {
                     {formatDateTime(event.startDateTime).dateOnly} -{" "}
                     {formatDateTime(event.startDateTime).timeOnly}
                   </p>
+                  <div className="font-bold text-primary-500"> {" /"}</div>
                   <p>
                     {formatDateTime(event.endDateTime).dateOnly} -{" "}
                     {formatDateTime(event.endDateTime).timeOnly}

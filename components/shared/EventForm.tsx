@@ -205,7 +205,8 @@ const EventForm = ({ userId, type, event, eventId }: EventFormProps) => {
                         value={field.value}
                         onChange={(val, lat, lng) => {
                           field.onChange(val);
-                          console.log("Selected:", val, lat, lng);
+                          form.setValue("latitude", lat || 0);
+                          form.setValue("longitude", lng || 0);
                         }}
                       />
                     </div>
