@@ -94,3 +94,19 @@ export async function deleteUser(clerkId: string) {
     handleError(error);
   }
 }
+
+// ===============================
+// GET ALL USERS (for admin panel)
+// ===============================
+export async function getAllUsers() {
+  try {
+    await connectToDatabase();
+
+    const users = await User.find().select(
+      "_id firstName lastName email clerkId createdAt"
+    );
+    return JSON.parse(JSON.stringify(users));
+  } catch (error) {
+    handleError(error);
+  }
+}
