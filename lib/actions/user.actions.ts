@@ -103,10 +103,13 @@ export async function getAllUsers() {
     await connectToDatabase();
 
     const users = await User.find().select(
-      "_id firstName lastName email clerkId createdAt"
+      "_id firstName lastName email photo clerkId createdAt"
     );
+
+    console.log("Fetched users:", users.length);
     return JSON.parse(JSON.stringify(users));
   } catch (error) {
-    handleError(error);
+    console.error(" Error in getAllUsers:", error);
+    throw new Error("Failed to fetch users");
   }
 }

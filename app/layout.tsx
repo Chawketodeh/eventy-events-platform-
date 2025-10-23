@@ -3,6 +3,7 @@ import { ClerkProvider } from "@clerk/nextjs";
 import type { Metadata } from "next";
 import { Poppins } from "next/font/google";
 import Script from "next/script";
+import { Toaster } from "sonner";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -25,7 +26,7 @@ export default function RootLayout({
       <body className={poppins.variable}>
         <ClerkProvider>
           {children}
-
+          <Toaster richColors position="top-center" />
           {/*  Load Google Maps JS once globally */}
           <Script
             id="google-maps"

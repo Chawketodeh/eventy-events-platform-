@@ -1,50 +1,102 @@
-"use client";
-import { useEffect, useState } from "react";
-import { getAllUsers } from "@/lib/actions/user.actions"; // we’ll make this
-import Link from "next/link";
+import Header from "@/components/shared/Header";
+import Footer from "@/components/shared/Footer";
+import { getAllUsers, deleteUser } from "@/lib/actions/user.actions";
 import { Button } from "@/components/ui/button";
+import Image from "next/image";
+import Link from "next/link";
 
-export default function AdminUsersPage() {
-  const [users, setUsers] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+export default async function ManageUsersPage() {
+  const users = await getAllUsers();
 
-  useEffect(() => {
-    (async () => {
-      const result = await getAllUsers();
-      setUsers(result || []);
-      setLoading(false);
-    })();
-  }, []);
-
-  if (loading) return <p>Loading users...</p>;
+  // 🔥 Filter out admin users
+  const filteredUsers = users?.filter(
+    (user: any) => user.email !== "admin@example.com" && !user.isAdmin
+  );
 
   return (
-    <section className="wrapper py-10">
-      <h2 className="h3-bold mb-6">Manage Users</h2>
-      <table className="w-full border-collapse border">
-        <thead>
-          <tr className="bg-gray-100">
-            <th className="border p-2">Name</th>
-            <th className="border p-2">Email</th>
-            <th className="border p-2">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {users.map((user) => (
-            <tr key={user._id}>
-              <td className="border p-2">
-                {user.firstName} {user.lastName}
-              </td>
-              <td className="border p-2">{user.email}</td>
-              <td className="border p-2">
-                <Link href={`/admin/users/${user._id}`}>
-                  <Button size="sm">Edit</Button>
-                </Link>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </section>
+    <div className="flex flex-col min-h-screen">
+      <Header isAdmin />
+
+      <main className="flex-1 bg-secondary bg-dotted-pattern bg-contain py-10 px-6">
+        <div className="max-w-6xl mx-auto">
+          {/* Back to dashboard */}
+          <div className="mb-6 flex justify-between items-center">
+            <h1 className="text-3xl font-bold">Manage Users</h1>
+            <Button asChild variant="outline">
+              <Link href="/admin">← Back to Dashboard</Link>
+            </Button>
+          </div>
+
+          <p className="text-gray-600 mb-8 text-center">
+            View, edit or delete platform users
+          </p>
+
+          {!filteredUsers?.length ? (
+            <p className="text-center text-gray-500">No users found.</p>
+          ) : (
+            <div className="overflow-x-auto shadow-md rounded-xl bg-white">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-gray-100 text-gray-700">
+                    <th className="p-3 border-b">Photo</th>
+                    <th className="p-3 border-b">Name</th>
+                    <th className="p-3 border-b">Email</th>
+                    <th className="p-3 border-b text-center">Actions</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {filteredUsers.map((user: any) => (
+                    <tr key={user._id} className="hover:bg-gray-50">
+                      <td className="p-3 border-b">
+                        <Image
+                          src={
+                            user.photo ||
+                            "/assets/icons/profile-placeholder.svg"
+                          }
+                          alt="user"
+                          width={40}
+                          height={40}
+                          className="rounded-full"
+                        />
+                      </td>
+
+                      <td className="p-3 border-b">
+                        {user.firstName || "—"} {user.lastName || ""}
+                      </td>
+
+                      <td className="p-3 border-b">
+                        {user.email || "No email"}
+                      </td>
+
+                      <td className="p-3 border-b text-center space-x-3">
+                        <Button asChild size="sm" variant="outline">
+                          <Link href={`/admin/users/edit/${user._id}`}>
+                            Edit
+                          </Link>
+                        </Button>
+
+                        <form
+                          action={async () => {
+                            "use server";
+                            await deleteUser(user.clerkId);
+                          }}
+                        >
+                          <Button type="submit" size="sm" variant="destructive">
+                            Delete
+                          </Button>
+                        </form>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </main>
+
+      <Footer />
+    </div>
   );
 }

@@ -16,8 +16,14 @@ export default function AdminPage() {
 
           <div className="flex justify-center gap-4">
             <Button asChild>
-              <Link href="/admin/manage-events">Manage Events</Link>
+              <Link href="/admin/events">Manage Events</Link>
             </Button>
+
+            <Link href="/admin/users">
+              <Button className="w-full md:w-64 bg-secondary" variant="outline">
+                Manage Users
+              </Button>
+            </Link>
 
             {/*  Button to switch to user view */}
             <Button variant="outline" asChild>
