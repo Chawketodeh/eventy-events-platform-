@@ -6,13 +6,13 @@ import { IOrder } from "@/lib/database/models/order.model";
 import { auth } from "@clerk/nextjs/server";
 import Link from "next/link";
 
-// ✅ Fix: Next.js 15.5+ requires `searchParams` to be a Promise
+//  Fix: Next.js 15.5+ requires `searchParams` to be a Promise
 type PageProps = {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 };
 
 const ProfilePage = async ({ searchParams }: PageProps) => {
-  // ✅ Await the searchParams
+  //  Await the searchParams
   const resolvedSearchParams = await searchParams;
 
   const sessionClaims = await auth();

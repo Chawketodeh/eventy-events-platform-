@@ -43,8 +43,8 @@ export type UpdateEventParams = {
     imageUrl: string;
     description: string;
     location: string;
-    latitude?: number; // ✅ added
-    longitude?: number; // ✅ added
+    latitude?: number; // added
+    longitude?: number; // added
     startDateTime: Date;
     endDateTime: Date;
     categoryId: string;

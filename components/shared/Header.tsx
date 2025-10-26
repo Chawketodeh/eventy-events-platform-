@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
 import Image from "next/image";
 import Link from "next/link";
@@ -12,6 +13,23 @@ type HeaderProps = {
 };
 
 const Header = ({ isAdmin = false }: HeaderProps) => {
+  const [isUserMode, setIsUserMode] = useState(false);
+
+  // detect ?mode=user in URL
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const urlParams = new URLSearchParams(window.location.search);
+      const isUser = urlParams.get("mode") === "user";
+      setIsUserMode(isUser);
+    }
+  }, []);
+
+  const handleReturnToAdmin = () => {
+    // remove ?mode=user and go to /admin
+    const base = window.location.origin + "/admin";
+    window.location.href = base;
+  };
+
   return (
     <header className="w-full border-b border-gray-200 py-3 md:py-4 bg-white shadow-sm">
       <div className="wrapper flex items-center justify-between">
@@ -25,25 +43,34 @@ const Header = ({ isAdmin = false }: HeaderProps) => {
           />
         </Link>
 
-        {/* Navigation (hide for admin) */}
+        {/* Navigation (hidden for admin) */}
         <SignedIn>
           {!isAdmin && (
-            <nav
-              className="md:flex md:flex-between hidden 
-              w-full max-w-xs"
-            >
+            <nav className="md:flex hidden w-full max-w-xs">
               <NavItems />
             </nav>
           )}
         </SignedIn>
 
         {/* Right side */}
-        <div className="flex w-36 justify-end gap-3 items-center">
+        <div className="flex w-auto justify-end gap-3 items-center">
           {/* Admin badge */}
-          {isAdmin && (
+          {isAdmin && !isUserMode && (
             <span className="text-xs font-semibold text-red-500 bg-red-100 px-3 py-1 rounded-full">
               Admin Mode
             </span>
+          )}
+
+          {/* ✅ Show 'Return to Admin' on any user page */}
+          {isUserMode && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleReturnToAdmin}
+              className="text-sm border-gray-300 hover:bg-gray-100"
+            >
+              Return to Admin
+            </Button>
           )}
 
           <SignedIn>

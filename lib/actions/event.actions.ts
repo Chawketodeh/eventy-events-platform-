@@ -41,27 +41,35 @@ const populateEvent = (query: any) => {
 ================================ */
 export async function createEvent({ userId, event, path }: CreateEventParams) {
   try {
-    const { userId: clerkUserId } = await auth();
+    const { userId: clerkUserId, sessionClaims } = await auth();
     if (!clerkUserId) throw new Error("Unauthorized");
 
     await connectToDatabase();
 
+    //  Extract user details from Clerk claims
+    const firstName = sessionClaims?.firstName || "Unknown";
+    const lastName = sessionClaims?.lastName || "";
+    const email = sessionClaims?.email || "";
+
+    //  Find or create organizer
     let organizer = await User.findOne({ clerkId: clerkUserId });
 
     if (!organizer) {
       organizer = await User.create({
         clerkId: clerkUserId,
-        firstName: "Unknown",
-        lastName: "User",
+        firstName,
+        lastName,
+        email,
       });
     }
 
+    //  Create the new event
     const newEvent = await Event.create({
       title: event.title,
       description: event.description,
       location: event.location,
-      latitude: event.latitude, //  added
-      longitude: event.longitude, // added
+      latitude: event.latitude,
+      longitude: event.longitude,
       imageUrl: event.imageUrl,
       startDateTime: event.startDateTime,
       endDateTime: event.endDateTime,
@@ -219,9 +227,12 @@ export async function getAllEvents({
       .skip(skipAmount)
       .limit(limit);
 
-    const events = await populateEvent(eventsQuery);
+    // Ensure population resolves fully before returning
+    const events = await populateEvent(eventsQuery).exec();
+
     const eventsCount = await Event.countDocuments(conditions);
 
+    // Send populated data with organizer names
     return {
       data: JSON.parse(JSON.stringify(events)),
       totalPages: Math.ceil(eventsCount / limit),

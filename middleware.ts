@@ -1,14 +1,14 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
-// Ignore webhooks and uploads
+// Ignore webhooks & uploads
 const isIgnored = createRouteMatcher([
   "/api/webhook/clerk",
   "/api/webhook/stripe",
   "/api/uploadthing",
 ]);
 
-// Public routes (accessible without auth)
+// Public routes
 const isPublic = createRouteMatcher([
   "/",
   "/events/:id",
@@ -23,26 +23,40 @@ export default clerkMiddleware(async (auth, req) => {
   if (isIgnored(req)) return NextResponse.next();
 
   const { userId, sessionClaims } = await auth();
-
-  // Correctly read admin flag
   const isAdmin =
     sessionClaims?.isAdmin === true || sessionClaims?.isAdmin === "true";
 
   const url = new URL(req.url);
+  const pathname = url.pathname;
+  const isUserMode = url.searchParams.get("mode") === "user";
 
-  console.log("Middleware — Admin flag:", isAdmin, "URL:", url.pathname);
+  console.log(
+    "Middleware — Admin flag:",
+    isAdmin,
+    "URL:",
+    pathname,
+    "UserMode:",
+    isUserMode
+  );
 
-  // Always redirect admin to /admin when visiting home
-  if (url.pathname === "/" && isAdmin) {
+  // 1. Admin on home, but not in user mode → send to /admin
+  if (pathname === "/" && isAdmin && !isUserMode) {
     return NextResponse.redirect(new URL("/admin", req.url));
   }
 
-  //  Block non-admins from /admin
-  if (url.pathname.startsWith("/admin") && !isAdmin) {
+  // 2. Admin trying to view as user while on /admin → kick to /
+  if (pathname.startsWith("/admin") && isAdmin && isUserMode) {
+    const userUrl = new URL("/", req.url);
+    userUrl.searchParams.set("mode", "user");
+    return NextResponse.redirect(userUrl);
+  }
+
+  // 3. Normal users can't open /admin
+  if (pathname.startsWith("/admin") && !isAdmin) {
     return NextResponse.redirect(new URL("/", req.url));
   }
 
-  // Protect private routes
+  // 4. Protect private routes
   if (!isPublic(req)) await auth.protect();
 
   return NextResponse.next();
@@ -50,7 +64,6 @@ export default clerkMiddleware(async (auth, req) => {
 
 export const config = {
   matcher: [
-    // Match everything except static files
     "/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
     "/(api|trpc)(.*)",
   ],
