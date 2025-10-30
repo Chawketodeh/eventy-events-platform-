@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
 import Header from "@/components/shared/Header";
 import Footer from "@/components/shared/Footer";
 import EventForm from "@/components/shared/EventForm";
@@ -7,8 +9,6 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { useAuth } from "@clerk/nextjs";
 import { Suspense } from "react";
-
-export const dynamic = "force-dynamic";
 
 export default function AdminCreateEventPage() {
   const { userId } = useAuth();
