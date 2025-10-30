@@ -10,7 +10,7 @@ type PageProps = {
 };
 
 export default async function EditUserPage({ params }: PageProps) {
-  const { id } = await params; // ✅ await the params Promise
+  const { id } = await params; //  await the params Promise
   const user = await getUserById(id);
 
   if (!user)
