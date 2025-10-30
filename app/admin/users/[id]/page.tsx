@@ -1,13 +1,15 @@
 import React from "react";
 
 type PageProps = {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 };
 
-export default function UserPage({ params }: PageProps) {
+export default async function UserPage({ params }: PageProps) {
+  const { id } = await params;
+
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-semibold">User ID: {params.id}</h1>
+      <h1 className="text-2xl font-semibold">User ID: {id}</h1>
       <p>This is the admin user detail page.</p>
     </div>
   );
