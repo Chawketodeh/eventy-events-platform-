@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -22,8 +23,8 @@ type Event = {
   url?: string;
 };
 
-export default function ViewEventPage() {
-  // type-safe useParams
+// Inner component wrapped in Suspense
+function EventContent() {
   const params = useParams<{ id: string }>();
   const id = params?.id;
 
@@ -53,71 +54,70 @@ export default function ViewEventPage() {
     };
   }, [id]);
 
-  if (!id) {
-    return <p className="text-center py-20">Invalid event ID.</p>;
-  }
-
-  if (loading) {
+  if (!id) return <p className="text-center py-20">Invalid event ID.</p>;
+  if (loading)
     return (
       <div className="flex justify-center items-center min-h-screen">
         <p className="animate-pulse text-gray-500">Loading event…</p>
       </div>
     );
-  }
+  if (!event) return <p className="text-center py-20">Event not found.</p>;
 
-  if (!event) {
-    return <p className="text-center py-20">Event not found.</p>;
-  }
+  return (
+    <main className="flex-1 bg-secondary bg-dotted-pattern bg-contain py-10 px-6">
+      <div className="max-w-5xl mx-auto bg-white rounded-xl shadow p-8">
+        {/* Header section */}
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-3xl font-bold">Event Details</h1>
+          <Button asChild variant="outline">
+            <Link href="/admin/events">← Back to Dashboard</Link>
+          </Button>
+        </div>
 
+        {/* Event content */}
+        <img
+          src={event.imageUrl}
+          alt={event.title}
+          className="w-full h-64 object-cover rounded-xl mb-4"
+        />
+
+        <h2 className="text-2xl font-bold mb-2">{event.title}</h2>
+        <p className="text-gray-500 mb-2">
+          {event.category?.name} · {event.organizer?.firstName}{" "}
+          {event.organizer?.lastName}
+        </p>
+        <p className="text-gray-600 mb-4">{event.description}</p>
+
+        <div className="mb-4 space-y-1">
+          <p>📍 {event.location}</p>
+          <p>
+            🗓️ {new Date(event.startDateTime ?? "").toLocaleString()} →{" "}
+            {new Date(event.endDateTime ?? "").toLocaleString()}
+          </p>
+          <p>
+            💰 {event.isFree ? "Free" : `$${event.price}`} |{" "}
+            <a
+              href={event.url}
+              className="text-blue-600 underline"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Visit link
+            </a>
+          </p>
+        </div>
+      </div>
+    </main>
+  );
+}
+
+export default function ViewEventPage() {
   return (
     <div className="min-h-screen flex flex-col">
       <Header isAdmin />
-
-      <main className="flex-1 bg-secondary bg-dotted-pattern bg-contain py-10 px-6">
-        <div className="max-w-5xl mx-auto bg-white rounded-xl shadow p-8">
-          {/* Header section */}
-          <div className="flex justify-between items-center mb-8">
-            <h1 className="text-3xl font-bold">Event Details</h1>
-            <Button asChild variant="outline">
-              <Link href="/admin/events">← Back to Dashboard</Link>
-            </Button>
-          </div>
-
-          {/* Event content */}
-          <img
-            src={event.imageUrl}
-            alt={event.title}
-            className="w-full h-64 object-cover rounded-xl mb-4"
-          />
-
-          <h2 className="text-2xl font-bold mb-2">{event.title}</h2>
-          <p className="text-gray-500 mb-2">
-            {event.category?.name} · {event.organizer?.firstName}{" "}
-            {event.organizer?.lastName}
-          </p>
-          <p className="text-gray-600 mb-4">{event.description}</p>
-
-          <div className="mb-4 space-y-1">
-            <p>📍 {event.location}</p>
-            <p>
-              🗓️ {new Date(event.startDateTime ?? "").toLocaleString()} →{" "}
-              {new Date(event.endDateTime ?? "").toLocaleString()}
-            </p>
-            <p>
-              💰 {event.isFree ? "Free" : `$${event.price}`} |{" "}
-              <a
-                href={event.url}
-                className="text-blue-600 underline"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Visit link
-              </a>
-            </p>
-          </div>
-        </div>
-      </main>
-
+      <Suspense fallback={<p className="text-center py-20">Loading page...</p>}>
+        <EventContent />
+      </Suspense>
       <Footer />
     </div>
   );

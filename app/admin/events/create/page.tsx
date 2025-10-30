@@ -6,6 +6,9 @@ import EventForm from "@/components/shared/EventForm";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { useAuth } from "@clerk/nextjs";
+import { Suspense } from "react";
+
+export const dynamic = "force-dynamic";
 
 export default function AdminCreateEventPage() {
   const { userId } = useAuth();
@@ -24,7 +27,10 @@ export default function AdminCreateEventPage() {
             </Button>
           </div>
 
-          <EventForm type="Create" userId={userId!} />
+          {/* Wrap the form with Suspense */}
+          <Suspense fallback={<p>Loading form...</p>}>
+            <EventForm type="Create" userId={userId!} />
+          </Suspense>
         </div>
       </main>
 
