@@ -5,21 +5,21 @@ import User from "@/lib/database/models/user.model";
 // PUT /api/users/[id]
 export async function PUT(
   req: Request,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await context.params;
+
   try {
     const body = await req.json();
     await connectToDatabase();
 
-    const updatedUser = await User.findByIdAndUpdate(params.id, body, {
-      new: true,
-    });
+    const updatedUser = await User.findByIdAndUpdate(id, body, { new: true });
 
     if (!updatedUser) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    return NextResponse.json(updatedUser);
+    return NextResponse.json(updatedUser, { status: 200 });
   } catch (err) {
     console.error("Error updating user:", err);
     return NextResponse.json(
