@@ -1,17 +1,23 @@
 "use client";
 
 export const dynamic = "force-dynamic";
+export const revalidate = 0; // disable static generation completely
 
+import { Suspense } from "react";
 import Header from "@/components/shared/Header";
 import Footer from "@/components/shared/Footer";
 import EventForm from "@/components/shared/EventForm";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { useAuth } from "@clerk/nextjs";
-import { Suspense } from "react";
 
-function AdminCreateEventContent() {
+// Move auth logic inside this component to isolate from prerender
+function CreateEventContent() {
   const { userId } = useAuth();
+
+  if (!userId) {
+    return <p className="text-center text-gray-500 py-10">Loading user...</p>;
+  }
 
   return (
     <div className="max-w-5xl mx-auto bg-white rounded-xl shadow p-8">
@@ -22,26 +28,23 @@ function AdminCreateEventContent() {
         </Button>
       </div>
 
-      <EventForm type="Create" userId={userId!} />
+      <EventForm type="Create" userId={userId} />
     </div>
   );
 }
 
 export default function AdminCreateEventPage() {
   return (
-    <div className="min-h-screen flex flex-col">
-      <Header isAdmin />
+    <Suspense fallback={<p className="text-center py-20">Loading page...</p>}>
+      <div className="min-h-screen flex flex-col">
+        <Header isAdmin />
 
-      <main className="flex-1 bg-secondary bg-dotted-pattern bg-contain py-10 px-6">
-        {/* Wrap entire page content in Suspense */}
-        <Suspense
-          fallback={<p className="text-center py-20">Loading page...</p>}
-        >
-          <AdminCreateEventContent />
-        </Suspense>
-      </main>
+        <main className="flex-1 bg-secondary bg-dotted-pattern bg-contain py-10 px-6">
+          <CreateEventContent />
+        </main>
 
-      <Footer />
-    </div>
+        <Footer />
+      </div>
+    </Suspense>
   );
 }
