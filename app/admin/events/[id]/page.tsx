@@ -23,28 +23,51 @@ type Event = {
 };
 
 export default function ViewEventPage() {
-  const { id } = useParams();
+  // type-safe useParams
+  const params = useParams<{ id: string }>();
+  const id = params?.id;
+
   const [event, setEvent] = useState<Event | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function fetchEvent() {
+    if (!id) return;
+    let ignore = false;
+
+    const fetchEvent = async () => {
       try {
         const res = await fetch(`/api/events/${id}`);
         if (!res.ok) throw new Error("Failed to fetch event");
         const data = await res.json();
-        setEvent(data);
+        if (!ignore) setEvent(data);
       } catch (error) {
         console.error("Error fetching event:", error);
       } finally {
-        setLoading(false);
+        if (!ignore) setLoading(false);
       }
-    }
-    if (id) fetchEvent();
+    };
+
+    fetchEvent();
+    return () => {
+      ignore = true;
+    };
   }, [id]);
 
-  if (loading) return <p className="text-center py-20">Loading...</p>;
-  if (!event) return <p className="text-center py-20">Event not found.</p>;
+  if (!id) {
+    return <p className="text-center py-20">Invalid event ID.</p>;
+  }
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <p className="animate-pulse text-gray-500">Loading event…</p>
+      </div>
+    );
+  }
+
+  if (!event) {
+    return <p className="text-center py-20">Event not found.</p>;
+  }
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -77,8 +100,8 @@ export default function ViewEventPage() {
           <div className="mb-4 space-y-1">
             <p>📍 {event.location}</p>
             <p>
-              🗓️ {new Date(event.startDateTime!).toLocaleString()} →{" "}
-              {new Date(event.endDateTime!).toLocaleString()}
+              🗓️ {new Date(event.startDateTime ?? "").toLocaleString()} →{" "}
+              {new Date(event.endDateTime ?? "").toLocaleString()}
             </p>
             <p>
               💰 {event.isFree ? "Free" : `$${event.price}`} |{" "}
@@ -86,6 +109,7 @@ export default function ViewEventPage() {
                 href={event.url}
                 className="text-blue-600 underline"
                 target="_blank"
+                rel="noopener noreferrer"
               >
                 Visit link
               </a>
