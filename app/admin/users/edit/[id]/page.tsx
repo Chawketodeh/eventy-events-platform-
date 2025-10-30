@@ -5,12 +5,14 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import EditUserForm from "@/components/admin/EditUserForm";
 
-export default async function EditUserPage({
-  params,
-}: {
-  params: { id: string };
-}) {
-  const user = await getUserById(params.id);
+type PageProps = {
+  params: Promise<{ id: string }>;
+};
+
+export default async function EditUserPage({ params }: PageProps) {
+  const { id } = await params; // ✅ await the params Promise
+  const user = await getUserById(id);
+
   if (!user)
     return (
       <div className="flex flex-col min-h-screen">
@@ -34,7 +36,7 @@ export default async function EditUserPage({
             </Button>
           </div>
 
-          {/*  client component form */}
+          {/* client component form */}
           <EditUserForm user={user} />
         </div>
       </main>
