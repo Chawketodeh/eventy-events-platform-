@@ -1,5 +1,9 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+export const revalidate = false;
+export const fetchCache = "force-no-store";
+
 import { Suspense } from "react";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
