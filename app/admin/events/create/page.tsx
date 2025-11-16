@@ -1,11 +1,5 @@
 "use client";
 
-// These lines must be exactly like this:
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
-export const fetchCache = "force-no-store";
-export const runtime = "edge";
-
 import { Suspense } from "react";
 import Header from "@/components/shared/Header";
 import Footer from "@/components/shared/Footer";
