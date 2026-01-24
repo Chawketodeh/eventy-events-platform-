@@ -1,22 +1,14 @@
-"use client";
-
-import { useSearchParams, useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { Suspense } from "react";
+import AdminLayoutClient from "./AdminLayoutClient";
 
 export default function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const searchParams = useSearchParams();
-  const router = useRouter();
-
-  // If ?mode=user, redirect to home page
-  useEffect(() => {
-    if (searchParams.get("mode") === "user") {
-      router.replace("/");
-    }
-  }, [searchParams, router]);
-
-  return <div>{children}</div>;
+  return (
+    <Suspense fallback={<div>{children}</div>}>
+      <AdminLayoutClient>{children}</AdminLayoutClient>
+    </Suspense>
+  );
 }
