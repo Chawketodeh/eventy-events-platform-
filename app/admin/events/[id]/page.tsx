@@ -87,8 +87,17 @@ function EventContent() {
 
         <h2 className="text-2xl font-bold mb-2">{event.title}</h2>
         <p className="text-gray-500 mb-2">
-          {event.category?.name} · {event.organizer?.firstName}{" "}
-          {event.organizer?.lastName}
+          {event.category &&
+          typeof event.category === "object" &&
+          "name" in event.category
+            ? event.category.name
+            : "Uncategorized"}{" "}
+          ·{" "}
+          {event.organizer &&
+          typeof event.organizer === "object" &&
+          "firstName" in event.organizer
+            ? `${event.organizer.firstName} ${event.organizer.lastName || ""}`
+            : "Unknown organizer"}
         </p>
         <p className="text-gray-600 mb-4">{event.description}</p>
 

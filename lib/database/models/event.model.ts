@@ -1,15 +1,12 @@
 import { Document, model, models, Schema, Types } from "mongoose";
 
 export interface IEvent extends Document {
-  // Removed _id because Document already defines it as ObjectId
-  // Redefining it as string causes a TypeScript conflict
-
   title: string;
   description?: string;
   location?: string;
 
-  latitude?: number; // Correct type: number
-  longitude?: number; // Correct type: number
+  latitude?: number;
+  longitude?: number;
 
   createdAt: Date;
   imageUrl: string;
@@ -19,11 +16,18 @@ export interface IEvent extends Document {
   isFree: boolean;
   url?: string;
 
-  // Changed from inline object to ObjectId to match the schema reference
-  category?: Types.ObjectId;
+  // Category can be ObjectId or populated object (after .populate())
+  category?: Types.ObjectId | { _id: Types.ObjectId; name: string };
 
-  // Changed from inline object to ObjectId to match the schema reference
-  organizer?: Types.ObjectId;
+  // Organizer can be ObjectId or populated object (after .populate())
+  organizer?:
+    | Types.ObjectId
+    | {
+        _id: Types.ObjectId;
+        clerkId: string;
+        firstName: string;
+        lastName: string;
+      };
 }
 
 const EventSchema = new Schema<IEvent>({
@@ -42,10 +46,8 @@ const EventSchema = new Schema<IEvent>({
   isFree: { type: Boolean, default: false },
   url: { type: String },
 
-  // Schema uses ObjectId references, interface must match
   category: { type: Schema.Types.ObjectId, ref: "Category" },
 
-  // Schema uses ObjectId references, interface must match
   organizer: { type: Schema.Types.ObjectId, ref: "User" },
 });
 

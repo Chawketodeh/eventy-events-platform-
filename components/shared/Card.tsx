@@ -1,6 +1,8 @@
 import { IEvent } from "@/lib/database/models/event.model";
 import { formatDateTime } from "@/lib/utils";
 import { auth } from "@clerk/nextjs/server";
+import { connectToDatabase } from "@/lib/database";
+import User from "@/lib/database/models/user.model";
 import Image from "next/image";
 import Link from "next/link";
 import { DeleteConfirmation } from "./DeleteConfirmation";
@@ -12,19 +14,24 @@ type CardProps = {
 };
 
 const Card = async ({ event, hasOrderLink, hidePrice }: CardProps) => {
-  const { userId, sessionClaims } = await auth();
+  const { userId: clerkUserId, sessionClaims } = await auth();
 
-  //  Check for admin privileges (from Clerk metadata)
+  // Check for admin privileges (from Clerk metadata)
   const isAdmin =
     sessionClaims?.isAdmin === true || sessionClaims?.isAdmin === "true";
 
-  //  Organizer of event (from MongoDB)
-  const eventOrganizerClerkId = event.organizer?.clerkId;
+  // Check event ownership by comparing MongoDB _ids
+  let isEventCreator = false;
+  if (clerkUserId && event.organizer) {
+    await connectToDatabase();
+    const currentUser = await User.findOne({ clerkId: clerkUserId }).select(
+      "_id",
+    );
+    // Compare MongoDB _id (as string) with event organizer ObjectId
+    isEventCreator = currentUser?._id.toString() === event.organizer.toString();
+  }
 
-  //  Compare with logged-in Clerk userId (not Mongo _id)
-  const isEventCreator = userId && eventOrganizerClerkId === userId;
-
-  //  Only show edit/delete for the event owner OR admin
+  // Only show edit/delete for the event owner OR admin
   const canManageEvent = isEventCreator || isAdmin;
 
   return (
@@ -63,12 +70,16 @@ const Card = async ({ event, hasOrderLink, hidePrice }: CardProps) => {
             <span className="p-semibold-14 w-min rounded-full bg-green-100 px-4 py-1 text-green-60">
               {event.isFree ? "FREE" : `$${event.price}`}
             </span>
-            <p
-              className="p-semibold-14 w-min rounded-full bg-gray-500/10 px-4 py-1
-             text-gray-500 line-clamp-1"
-            >
-              {event.category?.name}
-            </p>
+            {event.category &&
+              typeof event.category === "object" &&
+              "name" in event.category && (
+                <p
+                  className="p-semibold-14 w-min rounded-full bg-gray-500/10 px-4 py-1
+               text-gray-500 line-clamp-1"
+                >
+                  {(event.category as any).name}
+                </p>
+              )}
           </div>
         )}
 
@@ -83,9 +94,7 @@ const Card = async ({ event, hasOrderLink, hidePrice }: CardProps) => {
         </Link>
 
         <div className="flex-between w-full">
-          <p className="p-medium-14 md:p-medium-16 text-gray-600">
-            {event.organizer?.firstName} {event.organizer?.lastName}
-          </p>
+          <p className="p-medium-14 md:p-medium-16 text-gray-600">Organizer</p>
 
           {hasOrderLink && (
             <Link href={`/orders?eventId=${event._id}`} className="flex gap-2">

@@ -111,11 +111,16 @@ export default function ManageEventsPageClient() {
                         : "No date"}
                     </p>
                     <p className="text-sm text-gray-500 mb-2">
-                      {event.category?.name || "Uncategorized"} ·{" "}
-                      {event.organizer?.firstName
-                        ? `${event.organizer.firstName} ${
-                            event.organizer.lastName || ""
-                          }`
+                      {event.category &&
+                      typeof event.category === "object" &&
+                      "name" in event.category
+                        ? event.category.name
+                        : "Uncategorized"}{" "}
+                      ·{" "}
+                      {event.organizer &&
+                      typeof event.organizer === "object" &&
+                      "firstName" in event.organizer
+                        ? `${event.organizer.firstName} ${event.organizer.lastName || ""}`
                         : "Unknown organizer"}
                     </p>
                     <p className="text-sm text-gray-600 mb-3">

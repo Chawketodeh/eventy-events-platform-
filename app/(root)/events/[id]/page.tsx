@@ -25,8 +25,16 @@ const EventDetails = async ({ params, searchParams }: PageProps) => {
 
   const event = await getEventById(id);
 
+  // Extract category ID safely from populated or unpopulated object
+  const categoryId =
+    event.category &&
+    typeof event.category === "object" &&
+    "_id" in event.category
+      ? event.category._id
+      : event.category;
+
   const relatedEvents = await getRelatedEventsByCategory({
-    categoryId: event.category._id,
+    categoryId: categoryId as string,
     eventId: event._id,
     page: resolvedSearchParams?.page as string,
   });
@@ -53,15 +61,29 @@ const EventDetails = async ({ params, searchParams }: PageProps) => {
                     {event.isFree ? "FREE" : `$${event.price}`}
                   </p>
                   <p className="p-medium-16 rounded-full bg-gray-500/10 px-4 py-2.5 text-gray-500">
-                    {event.category?.name || "Uncategorized"}
+                    {event.category &&
+                    typeof event.category === "object" &&
+                    "name" in event.category
+                      ? event.category.name
+                      : "Uncategorized"}
                   </p>
                 </div>
 
                 <p className="p-medium-18 ml-2 mt-2 sm:mt-0">
-                  by{" "}
-                  <span className="text-primary-500">
-                    {event.organizer?.firstName} {event.organizer?.lastName}
-                  </span>
+                  {event.organizer &&
+                  typeof event.organizer === "object" &&
+                  "firstName" in event.organizer ? (
+                    <>
+                      by{" "}
+                      <span className="text-primary-500">
+                        {event.organizer.firstName} {event.organizer.lastName}
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      by <span className="text-primary-500">Organizer</span>
+                    </>
+                  )}
                 </p>
               </div>
             </div>

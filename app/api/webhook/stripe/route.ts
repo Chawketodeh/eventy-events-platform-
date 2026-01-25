@@ -41,9 +41,3 @@ export async function POST(request: Request) {
 
   return new NextResponse("Webhook received", { status: 200 });
 }
-
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};

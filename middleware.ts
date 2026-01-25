@@ -36,7 +36,7 @@ export default clerkMiddleware(async (auth, req) => {
     "URL:",
     pathname,
     "UserMode:",
-    isUserMode
+    isUserMode,
   );
 
   // 1. Admin on home, but not in user mode → send to /admin
@@ -61,10 +61,3 @@ export default clerkMiddleware(async (auth, req) => {
 
   return NextResponse.next();
 });
-
-export const config = {
-  matcher: [
-    "/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
-    "/(api|trpc)(.*)",
-  ],
-};
