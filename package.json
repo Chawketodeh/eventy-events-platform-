@@ -10,7 +10,7 @@
   "dependencies": {
     "@clerk/backend": "^2.16.0",
     "@clerk/clerk-react": "^5.51.0",
-    "@clerk/elements": "^0.23.69",
+    "@clerk/elements": "^0.24.6",
     "@clerk/nextjs": "^6.33.3",
     "@hookform/resolvers": "^5.2.2",
     "@radix-ui/react-alert-dialog": "^1.1.15",
@@ -30,7 +30,7 @@
     "lucide-react": "^0.542.0",
     "mongodb": "^6.20.0",
     "mongoose": "^8.18.2",
-    "next": "^15.5.4",
+    "next": "^16.1.4",
     "query-string": "^9.3.1",
     "react": "19.1.0",
     "react-datepicker": "^8.7.0",
