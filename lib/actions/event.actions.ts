@@ -153,7 +153,8 @@ export async function updateEvent({ userId, event, path }: UpdateEventParams) {
     revalidatePath(path);
     return JSON.parse(JSON.stringify(updatedEvent));
   } catch (error) {
-    handleError(error);
+    console.error("Error updating event:", error);
+    throw new Error("Failed to update event");
   }
 }
 
@@ -187,7 +188,8 @@ export async function deleteEvent({ eventId, path }: DeleteEventParams) {
     const deletedEvent = await Event.findByIdAndDelete(eventId);
     if (deletedEvent) revalidatePath(path);
   } catch (error) {
-    handleError(error);
+    console.error("Error deleting event:", error);
+    throw new Error("Failed to delete event");
   }
 }
 
