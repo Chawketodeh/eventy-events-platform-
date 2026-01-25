@@ -49,7 +49,8 @@ export const checkoutOrder = async (order: CheckoutOrderParams) => {
     redirect(session.url!);
   } catch (error) {
     console.error(" Stripe checkout error:", error);
-    throw error;
+    // Throw proper Error object instead of raw error
+    throw new Error("Stripe checkout failed");
   }
 };
 
@@ -68,7 +69,9 @@ export const createOrder = async (order: CreateOrderParams) => {
 
     return JSON.parse(JSON.stringify(newOrder));
   } catch (error) {
-    handleError(error);
+    console.error("Failed to create order:", error);
+    // Throw proper Error instead of undefined
+    throw new Error("Failed to create order");
   }
 };
 
@@ -138,7 +141,8 @@ export async function getOrdersByEvent({
     return JSON.parse(JSON.stringify(orders));
   } catch (error) {
     console.error(" Error in getOrdersByEvent:", error);
-    handleError(error);
+    // Return empty array on error instead of undefined
+    return [];
   }
 }
 
@@ -172,6 +176,7 @@ export const getOrdersByUser = async ({
     return JSON.parse(JSON.stringify({ data: orders }));
   } catch (error) {
     console.error(" Error in getOrdersByUser:", error);
-    handleError(error);
+    // Return empty data on error instead of undefined
+    return { data: [] };
   }
 };

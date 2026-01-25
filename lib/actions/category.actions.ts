@@ -14,7 +14,9 @@ export const createCategory = async ({
     const newCategory = await Category.create({ name: categoryName });
     return JSON.parse(JSON.stringify(newCategory));
   } catch (error) {
-    handleError(error);
+    console.error("Error creating category:", error);
+    // Throw proper Error instead of undefined
+    throw new Error("Failed to create category");
   }
 };
 
@@ -25,6 +27,8 @@ export const getAllCategories = async () => {
     const categories = await Category.find();
     return JSON.parse(JSON.stringify(categories));
   } catch (error) {
-    handleError(error);
+    console.error("Error fetching categories:", error);
+    // Return empty array instead of undefined
+    return [];
   }
 };

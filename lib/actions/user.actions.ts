@@ -19,7 +19,7 @@ export const createUser = async (user: CreateUserParams) => {
     const newUser = await User.findOneAndUpdate(
       { clerkId: user.clerkId }, // search by clerkId
       user, // update with latest data
-      { new: true, upsert: true, setDefaultsOnInsert: true } // create if not exists + apply defaults
+      { new: true, upsert: true, setDefaultsOnInsert: true }, // create if not exists + apply defaults
     );
 
     console.log(" User upserted in DB:", newUser);
@@ -27,7 +27,8 @@ export const createUser = async (user: CreateUserParams) => {
     return JSON.parse(JSON.stringify(newUser));
   } catch (error) {
     console.error(" DB error while upserting user:", error);
-    handleError(error);
+    // Throw proper Error instead of calling handleError (which doesn't return)
+    throw new Error("Failed to create or update user");
   }
 };
 
@@ -75,13 +76,13 @@ export async function deleteUser(clerkId: string) {
       // Update the 'events' collection to remove references to the user
       Event.updateMany(
         { _id: { $in: userToDelete.events } },
-        { $pull: { organizer: userToDelete._id } }
+        { $pull: { organizer: userToDelete._id } },
       ),
 
       // Update the 'orders' collection to remove references to the user
       Order.updateMany(
         { _id: { $in: userToDelete.orders } },
-        { $unset: { buyer: 1 } }
+        { $unset: { buyer: 1 } },
       ),
     ]);
 
@@ -103,7 +104,7 @@ export async function getAllUsers() {
     await connectToDatabase();
 
     const users = await User.find().select(
-      "_id firstName lastName email photo clerkId createdAt"
+      "_id firstName lastName email photo clerkId createdAt",
     );
 
     console.log("Fetched users:", users.length);

@@ -99,7 +99,8 @@ export async function getEventById(eventId: string) {
 
     return JSON.parse(JSON.stringify(event));
   } catch (error) {
-    handleError(error);
+    console.error("Error fetching event:", error);
+    throw new Error("Failed to fetch event");
   }
 }
 
@@ -146,7 +147,7 @@ export async function updateEvent({ userId, event, path }: UpdateEventParams) {
         url: event.url,
         category: event.categoryId,
       },
-      { new: true }
+      { new: true },
     );
 
     revalidatePath(path);
@@ -238,7 +239,9 @@ export async function getAllEvents({
       totalPages: Math.ceil(eventsCount / limit),
     };
   } catch (error) {
-    handleError(error);
+    console.error("Error fetching all events:", error);
+    // Return empty data instead of undefined
+    return { data: [], totalPages: 0 };
   }
 }
 
@@ -265,7 +268,9 @@ export const getEventsByUser = async ({ userId, page = 1, limit = 6 }: any) => {
       totalPages: Math.ceil(count / limit),
     };
   } catch (error) {
-    handleError(error);
+    console.error("Error fetching user events:", error);
+    // Return empty data instead of undefined
+    return { data: [], totalPages: 0 };
   }
 };
 
@@ -300,7 +305,9 @@ export async function getRelatedEventsByCategory({
       totalPages: Math.ceil(eventsCount / limit),
     };
   } catch (error) {
-    handleError(error);
+    console.error("Error fetching related events:", error);
+    // Return empty data instead of undefined
+    return { data: [], totalPages: 0 };
   }
 }
 
