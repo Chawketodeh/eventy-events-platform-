@@ -52,8 +52,8 @@ const Dropdown = ({ value, onchangeHandler }: dropdownProps) => {
         {categories.length > 0 &&
           categories.map((category) => (
             <SelectItem
-              key={category._id}
-              value={category._id}
+              key={category._id.toString()}
+              value={category._id.toString()}
               className="p-regular-14 hover:bg-gray-100 cursor-pointer"
             >
               {category.name}
