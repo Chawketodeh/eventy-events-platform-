@@ -2,17 +2,18 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   images: {
-    domains: ["utfs.io"],
+    // Use remotePatterns instead of deprecated domains
     remotePatterns: [
       {
         protocol: "https",
-        hostname: "**", // allows all domains
-        port: "",
+        hostname: "utfs.io",
+      },
+      {
+        protocol: "https",
+        hostname: "**", // Allow all HTTPS domains
       },
     ],
   },
-
-  // no webpack overrides here
 };
 
 export default nextConfig;

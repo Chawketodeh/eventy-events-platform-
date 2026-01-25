@@ -1,18 +1,14 @@
-import { Schema, model, models, Document } from "mongoose";
+import { Schema, model, models, Document, Types } from "mongoose";
 
 export interface IOrder extends Document {
   createdAt: Date;
   stripeId: string;
   totalAmount: string;
-  event: {
-    _id: string;
-    title: string;
-  };
-  buyer: {
-    _id: string;
-    firstName: string;
-    lastName: string;
-  };
+  // event and buyer are ObjectIds in schema, but can be populated
+  event: Types.ObjectId | { _id: Types.ObjectId; title: string };
+  buyer:
+    | Types.ObjectId
+    | { _id: Types.ObjectId; firstName: string; lastName: string };
 }
 
 export type IOrderItem = {
