@@ -5,6 +5,7 @@ import {
   getRelatedEventsByCategory,
 } from "@/lib/actions/event.actions";
 import { formatDateTime } from "@/lib/utils";
+import { currentUser } from "@clerk/nextjs/server";
 import Image from "next/image";
 import EventMap from "@/components/shared/EventMap";
 
@@ -15,6 +16,10 @@ type PageProps = {
 };
 
 const EventDetails = async ({ params, searchParams }: PageProps) => {
+  const user = await currentUser();
+  const userId = user?.id || null;
+  const isAdmin = user?.publicMetadata?.isAdmin === true || user?.publicMetadata?.isAdmin === "true";
+
   //  Await both params and searchParams
   const { id } = await params;
   const resolvedSearchParams = await searchParams;
@@ -25,18 +30,16 @@ const EventDetails = async ({ params, searchParams }: PageProps) => {
 
   const event = await getEventById(id);
 
-  // Extract category ID safely from populated or unpopulated object
-  const categoryId =
-    event.category &&
-    typeof event.category === "object" &&
-    "_id" in event.category
-      ? event.category._id
-      : event.category;
+  if (!event) {
+    return <p className="text-center text-red-500">Event not found</p>;
+  }
+
+  const page = Number(resolvedSearchParams?.page) || 1;
 
   const relatedEvents = await getRelatedEventsByCategory({
-    categoryId: categoryId as string,
+    categoryId: event.category?._id,
     eventId: event._id,
-    page: resolvedSearchParams?.page as string,
+    page: page.toString(),
   });
 
   return (
@@ -61,29 +64,15 @@ const EventDetails = async ({ params, searchParams }: PageProps) => {
                     {event.isFree ? "FREE" : `$${event.price}`}
                   </p>
                   <p className="p-medium-16 rounded-full bg-gray-500/10 px-4 py-2.5 text-gray-500">
-                    {event.category &&
-                    typeof event.category === "object" &&
-                    "name" in event.category
-                      ? event.category.name
-                      : "Uncategorized"}
+                    {event.category?.name || "Uncategorized"}
                   </p>
                 </div>
 
                 <p className="p-medium-18 ml-2 mt-2 sm:mt-0">
-                  {event.organizer &&
-                  typeof event.organizer === "object" &&
-                  "firstName" in event.organizer ? (
-                    <>
-                      by{" "}
-                      <span className="text-primary-500">
-                        {event.organizer.firstName} {event.organizer.lastName}
-                      </span>
-                    </>
-                  ) : (
-                    <>
-                      by <span className="text-primary-500">Organizer</span>
-                    </>
-                  )}
+                  by{" "}
+                  <span className="text-primary-500">
+                    {event.organizer?.firstName} {event.organizer?.lastName}
+                  </span>
                 </p>
               </div>
             </div>
@@ -152,9 +141,11 @@ const EventDetails = async ({ params, searchParams }: PageProps) => {
           emptyTitle="No events found"
           emptyStateSubtext="Come back later"
           collectionType="All_Events"
-          limit={6}
-          page={1}
-          totalPages={2}
+          limit={3}
+          page={page}
+          totalPages={relatedEvents?.totalPages || 0}
+          userId={userId}
+          isAdmin={isAdmin}
         />
       </section>
     </>

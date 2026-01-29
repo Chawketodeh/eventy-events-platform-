@@ -1,119 +1,115 @@
 "use server";
 
-import { CreateUserParams, UpdateUserParams } from "@/types";
+import { auth } from "@clerk/nextjs/server";
+import { connectToDatabase } from "@/lib/database";
+import User from "@/lib/database/models/user.model";
+import Event from "@/lib/database/models/event.model";
 
-import { handleError } from "../utils";
+import {
+  CreateUserParams,
+  UpdateUserParams,
+  DeleteUserParams,
+  GetUserByIdParams,
+} from "@/types";
 
-import { connectToDatabase } from "../database";
-
-import User from "../database/models/user.model";
-import Order from "../database/models/order.model";
-import Event from "../database/models/event.model";
-
-import { revalidatePath } from "next/cache";
-export const createUser = async (user: CreateUserParams) => {
+/* ===============================
+   CREATE USER
+================================ */
+export async function createUser(user: CreateUserParams) {
   try {
     await connectToDatabase();
-    console.log(" Upserting user in DB:", user);
 
-    const newUser = await User.findOneAndUpdate(
-      { clerkId: user.clerkId }, // search by clerkId
-      user, // update with latest data
-      { new: true, upsert: true, setDefaultsOnInsert: true }, // create if not exists + apply defaults
-    );
-
-    console.log(" User upserted in DB:", newUser);
-
+    const newUser = await User.create(user);
     return JSON.parse(JSON.stringify(newUser));
   } catch (error) {
-    console.error(" DB error while upserting user:", error);
-    // Throw proper Error instead of calling handleError (which doesn't return)
-    throw new Error("Failed to create or update user");
+    console.error("Create user failed:", error);
+    throw new Error(
+      error instanceof Error ? error.message : "Failed to create user"
+    );
   }
-};
+}
 
-export async function getUserById(userId: string) {
+/* ===============================
+   GET USER BY ID
+================================ */
+export async function getUserById({ userId }: GetUserByIdParams) {
   try {
     await connectToDatabase();
 
     const user = await User.findById(userId);
+    if (!user) return null;
 
-    if (!user) throw new Error("User not found");
     return JSON.parse(JSON.stringify(user));
   } catch (error) {
-    console.error("Error fetching user:", error);
-    throw new Error("Failed to fetch user");
+    console.error("Get user failed:", error);
+    return null;
   }
 }
 
-export async function updateUser(clerkId: string, user: UpdateUserParams) {
+/* ===============================
+   UPDATE USER
+================================ */
+export async function updateUser({ clerkId, user, path }: UpdateUserParams) {
   try {
+    const { userId } = await auth();
+    if (!userId) throw new Error("Unauthorized");
+
     await connectToDatabase();
 
     const updatedUser = await User.findOneAndUpdate({ clerkId }, user, {
       new: true,
     });
+    if (!updatedUser) throw new Error("User not found");
 
-    if (!updatedUser) throw new Error("User update failed");
     return JSON.parse(JSON.stringify(updatedUser));
   } catch (error) {
-    console.error("Error updating user:", error);
-    throw new Error("Failed to update user");
+    console.error("Update user failed:", error);
+    throw new Error(
+      error instanceof Error ? error.message : "Failed to update user"
+    );
   }
 }
 
-export async function deleteUser(clerkId: string) {
+/* ===============================
+   DELETE USER
+================================ */
+export async function deleteUser({ clerkId }: DeleteUserParams) {
   try {
     await connectToDatabase();
 
-    // Find user to delete
     const userToDelete = await User.findOne({ clerkId });
 
     if (!userToDelete) {
       throw new Error("User not found");
     }
 
-    // Unlink relationships
-    await Promise.all([
-      // Update the 'events' collection to remove references to the user
-      Event.updateMany(
-        { _id: { $in: userToDelete.events } },
-        { $pull: { organizer: userToDelete._id } },
-      ),
-
-      // Update the 'orders' collection to remove references to the user
-      Order.updateMany(
-        { _id: { $in: userToDelete.orders } },
-        { $unset: { buyer: 1 } },
-      ),
-    ]);
+    // Delete all events of user
+    await Event.deleteMany({ _id: { $in: userToDelete.events } });
 
     // Delete user
     const deletedUser = await User.findByIdAndDelete(userToDelete._id);
-    revalidatePath("/");
-
-    return deletedUser ? JSON.parse(JSON.stringify(deletedUser)) : null;
+    return JSON.parse(JSON.stringify(deletedUser));
   } catch (error) {
-    console.error("Error deleting user:", error);
-    throw new Error("Failed to delete user");
+    console.error("Delete user failed:", error);
+    throw new Error(
+      error instanceof Error ? error.message : "Failed to delete user"
+    );
   }
 }
 
-// ===============================
-// GET ALL USERS (for admin panel)
-// ===============================
-export async function getAllUsers() {
+/* ===============================
+   GET USER BY CLERK ID
+================================ */
+export async function getUserByClerkId(clerkId: string) {
   try {
     await connectToDatabase();
 
-    const users = await User.find().select(
-      "_id firstName lastName email photo clerkId createdAt",
-    );
+    const user = await User.findOne({ clerkId });
+    if (!user) return null;
 
-    console.log("Fetched users:", users.length);
-    return JSON.parse(JSON.stringify(users));
+    return JSON.parse(JSON.stringify(user));
   } catch (error) {
-    console.error(" Error in getAllUsers:", error);
-    throw new Error("Failed to fetch users");
+    console.error("Get user by Clerk ID failed:", error);
+    return null;
   }
 }

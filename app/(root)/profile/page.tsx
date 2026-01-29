@@ -15,8 +15,10 @@ const ProfilePage = async ({ searchParams }: PageProps) => {
   //  Await the searchParams
   const resolvedSearchParams = await searchParams;
 
-  const sessionClaims = await auth();
-  const userId = sessionClaims?.userId as string;
+  const { userId, sessionClaims } = await auth();
+  const isAdmin = sessionClaims?.isAdmin === true || sessionClaims?.isAdmin === "true";
+
+  if (!userId) return null;
 
   const ordersPage = Number(resolvedSearchParams?.ordersPage) || 1;
   const eventsPage = Number(resolvedSearchParams?.eventsPage) || 1;
@@ -48,6 +50,8 @@ const ProfilePage = async ({ searchParams }: PageProps) => {
           page={ordersPage}
           urlParamName="ordersPage"
           totalPages={orders?.totalPages}
+          userId={userId}
+          isAdmin={isAdmin}
         />
       </section>
 
@@ -71,6 +75,8 @@ const ProfilePage = async ({ searchParams }: PageProps) => {
           page={eventsPage}
           urlParamName="eventsPage"
           totalPages={organizedEvents?.totalPages}
+          userId={userId}
+          isAdmin={isAdmin}
         />
       </section>
     </>

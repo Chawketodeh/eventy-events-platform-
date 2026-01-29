@@ -4,8 +4,10 @@ const nextConfig: NextConfig = {
   experimental: {
     optimizePackageImports: ["@radix-ui/*", "@hookform/*"],
   },
+  turbopack: {
+    root: "C:/Users/abdou/Documents/eventy",
+  },
   images: {
-    // Use remotePatterns instead of deprecated domains
     remotePatterns: [
       {
         protocol: "https",
@@ -13,7 +15,7 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: "https",
-        hostname: "**", // Allow all HTTPS domains
+        hostname: "**",
       },
     ],
   },

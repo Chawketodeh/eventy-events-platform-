@@ -3,6 +3,7 @@ import Collection from "@/components/shared/Collection";
 import Search from "@/components/shared/Search";
 import { Button } from "@/components/ui/button";
 import { getAllEvents } from "@/lib/actions/event.actions";
+import { currentUser } from "@clerk/nextjs/server";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -11,7 +12,13 @@ type PageProps = {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 };
 
+export const dynamic = "force-dynamic";
+
 export default async function Home({ searchParams }: PageProps) {
+  const user = await currentUser();
+  const userId = user?.id || null;
+  const isAdmin = user?.publicMetadata?.isAdmin === true || user?.publicMetadata?.isAdmin === "true";
+
   //  Await the Promise before using
   const resolvedSearchParams = await searchParams;
 
@@ -77,8 +84,10 @@ export default async function Home({ searchParams }: PageProps) {
           emptyStateSubtext="Come back later"
           collectionType="All_Events"
           limit={6}
-          page={1}
-          totalPages={2}
+          page={page}
+          totalPages={events?.totalPages || 0}
+          userId={userId}
+          isAdmin={isAdmin}
         />
       </section>
     </>

@@ -1,4 +1,14 @@
 // ====== USER PARAMS
+export type User = {
+  _id: string;
+  clerkId: string;
+  firstName?: string;
+  lastName?: string;
+  userName?: string;
+  email: string;
+  photo?: string;
+};
+
 export type CreateUserParams = {
   clerkId: string;
   firstName?: string;
@@ -9,11 +19,14 @@ export type CreateUserParams = {
 };
 
 export type UpdateUserParams = {
-  firstName?: string;
-  lastName?: string;
-  userName?: string;
-  photo?: string;
+  clerkId: string;
+  user: Partial<User>;
+  path: string;
 };
+
+export type DeleteUserParams = {
+  clerkId: string;
+}
 
 // ====== EVENT PARAMS
 export type CreateEventParams = {
@@ -151,4 +164,8 @@ export type RemoveUrlQueryParams = {
 export type SearchParamProps = {
   params?: Promise<{ id?: string }>;
   searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
+};
+
+export type GetUserByIdParams = {
+  userId: string;
 };

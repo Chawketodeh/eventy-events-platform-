@@ -1,8 +1,5 @@
 import { IEvent } from "@/lib/database/models/event.model";
 import { formatDateTime } from "@/lib/utils";
-import { auth } from "@clerk/nextjs/server";
-import { connectToDatabase } from "@/lib/database";
-import User from "@/lib/database/models/user.model";
 import Image from "next/image";
 import Link from "next/link";
 import { DeleteConfirmation } from "./DeleteConfirmation";
@@ -11,25 +8,14 @@ type CardProps = {
   event: IEvent;
   hasOrderLink?: boolean;
   hidePrice?: boolean;
+  userId?: string | null;
+  isAdmin?: boolean;
 };
 
-const Card = async ({ event, hasOrderLink, hidePrice }: CardProps) => {
-  const { userId: clerkUserId, sessionClaims } = await auth();
-
-  // Check for admin privileges (from Clerk metadata)
-  const isAdmin =
-    sessionClaims?.isAdmin === true || sessionClaims?.isAdmin === "true";
-
-  // Check event ownership by comparing MongoDB _ids
-  let isEventCreator = false;
-  if (clerkUserId && event.organizer) {
-    await connectToDatabase();
-    const currentUser = await User.findOne({ clerkId: clerkUserId }).select(
-      "_id",
-    );
-    // Compare MongoDB _id (as string) with event organizer ObjectId
-    isEventCreator = currentUser?._id.toString() === event.organizer.toString();
-  }
+const Card = ({ event, hasOrderLink, hidePrice, userId, isAdmin }: CardProps) => {
+  // Check event ownership by comparing Clerk IDs (preferred) or MongoDB _ids
+  const organizer = event.organizer as any;
+  const isEventCreator = userId === organizer?.clerkId || userId === organizer?._id?.toString() || userId === organizer?.toString();
 
   // Only show edit/delete for the event owner OR admin
   const canManageEvent = isEventCreator || isAdmin;

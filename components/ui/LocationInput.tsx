@@ -1,21 +1,28 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import PlacesAutocomplete, {
   geocodeByAddress,
   getLatLng,
 } from "react-places-autocomplete";
-import { GoogleMap, MarkerF } from "@react-google-maps/api";
+import { GoogleMap, MarkerF, useJsApiLoader } from "@react-google-maps/api";
 
 type LocationInputProps = {
   value?: string;
   onChangeAction: (address: string, lat?: number, lng?: number) => void;
 };
 
+const LIBRARIES: ("places" | "drawing" | "geometry" | "visualization")[] = ["places"];
+
 export default function LocationInput({
   value,
   onChangeAction,
 }: LocationInputProps) {
+  const { isLoaded, loadError } = useJsApiLoader({
+    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
+    libraries: LIBRARIES,
+  });
+
   const [address, setAddress] = useState(value || "");
   const [position, setPosition] = useState<{ lat: number; lng: number } | null>(
     null
@@ -32,6 +39,9 @@ export default function LocationInput({
       console.error("Error selecting location:", error);
     }
   };
+
+  if (loadError) return <div>Error loading maps</div>;
+  if (!isLoaded) return <div>Loading maps...</div>;
 
   return (
     <div className="flex flex-col w-full">
@@ -51,7 +61,7 @@ export default function LocationInput({
                   "w-full border-none bg-transparent outline-none text-gray-800 placeholder:text-gray-400 focus:ring-0 truncate",
               })}
             />
-            <div className="z-50 bg-white shadow-md rounded-md mt-2">
+            <div className="z-50 bg-white shadow-md rounded-md mt-2 max-h-60 overflow-y-auto">
               {loading && (
                 <div className="p-2 text-sm text-gray-400">Loading...</div>
               )}

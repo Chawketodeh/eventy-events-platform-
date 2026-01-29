@@ -17,17 +17,15 @@ export const connectToDatabase = async () => {
     if (!cached.promise) {
       cached.promise = mongoose.connect(MONGODB_URI, {
         dbName: "eventy",
-        bufferCommands: false,
         serverSelectionTimeoutMS: 5000, // wait max 5s for connection /avoids long timeouts
       });
     }
 
     cached.conn = await cached.promise;
-    console.log(" Connected to MongoDB");
     (global as any).mongoose = cached;
     return cached.conn;
   } catch (error) {
-    console.error(" MongoDB connection error:", error);
-    throw new Error("Failed to connect to MongoDB");
+    console.error("MongoDB connection error:", error);
+    throw error; // STOP everything if DB is not connected
   }
 };

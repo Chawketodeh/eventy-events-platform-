@@ -18,19 +18,24 @@ const Search = ({ placeholder = "Search..." }: { placeholder?: string }) => {
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
       let newUrl = "";
+      const currentParams = searchParams.toString();
+
       if (query) {
         newUrl = formUrlQuery({
-          params: searchParams.toString(),
+          params: currentParams,
           key: "query",
           value: query,
         });
       } else {
         newUrl = removeKeysFromQuery({
-          params: searchParams.toString(),
+          params: currentParams,
           keysToRemove: ["query"],
         });
       }
-      router.push(newUrl, { scroll: false });
+
+      if (newUrl !== window.location.pathname + window.location.search) {
+        router.push(newUrl, { scroll: false });
+      }
     }, 300);
 
     return () => clearTimeout(delayDebounceFn);

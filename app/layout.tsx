@@ -1,19 +1,14 @@
-import "./globals.css";
-import { ClerkProvider } from "@clerk/nextjs";
 import type { Metadata } from "next";
-import { Poppins } from "next/font/google";
-import Script from "next/script";
+import { ClerkProvider } from "@clerk/nextjs";
 import { Toaster } from "sonner";
-
-const poppins = Poppins({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  variable: "--font-poppins",
-});
+import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Eventy",
-  description: "Eventy - Event Management Platform",
+  title: "Eventy - Event Management Platform",
+  description: "Create and manage events with ease",
+  icons: {
+    icon: "/favicon.ico",
+  },
 };
 
 export default function RootLayout({
@@ -22,19 +17,25 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <body className={`${poppins.variable} font-sans`}>
-        <ClerkProvider>
-          {children}
-          <Toaster richColors position="top-center" />
-          {/*  Load Google Maps JS once globally */}
-          <Script
-            id="google-maps"
-            strategy="afterInteractive"
-            src={`https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&libraries=places`}
+    <ClerkProvider>
+      <html lang="en">
+        <head>
+          <link rel="preconnect" href="https://fonts.googleapis.com" />
+          <link
+            rel="preconnect"
+            href="https://fonts.gstatic.com"
+            crossOrigin="anonymous"
           />
-        </ClerkProvider>
-      </body>
-    </html>
+          <link
+            href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap"
+            rel="stylesheet"
+          />
+        </head>
+        <body className="antialiased">
+          {children}
+          <Toaster />
+        </body>
+      </html>
+    </ClerkProvider>
   );
 }

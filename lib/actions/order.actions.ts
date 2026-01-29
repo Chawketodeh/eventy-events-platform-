@@ -1,19 +1,19 @@
 "use server";
 
+import { redirect } from "next/navigation";
+import { auth } from "@clerk/nextjs/server";
 import Stripe from "stripe";
+import { connectToDatabase } from "@/lib/database";
+import Order from "@/lib/database/models/order.model";
+import Event from "@/lib/database/models/event.model";
+import User from "@/lib/database/models/user.model";
+
 import {
   CheckoutOrderParams,
   CreateOrderParams,
   GetOrdersByEventParams,
   GetOrdersByUserParams,
 } from "@/types";
-import { redirect } from "next/navigation";
-import { handleError } from "../utils";
-import { connectToDatabase } from "../database";
-import Order from "../database/models/order.model";
-import Event from "../database/models/event.model";
-import User from "../database/models/user.model";
-import { ObjectId } from "mongodb";
 
 /* ============================
    CHECKOUT ORDER (STRIPE)
@@ -57,91 +57,85 @@ export const checkoutOrder = async (order: CheckoutOrderParams) => {
 /* ============================
    CREATE ORDER
 ============================ */
-export const createOrder = async (order: CreateOrderParams) => {
+export async function createOrder(order: CreateOrderParams) {
   try {
     await connectToDatabase();
+
+    // Resolve Clerk ID to MongoDB ID if needed, 
+    // or assume it's passed as clerkId in metadata
+    const buyer = await User.findOne({ clerkId: order.buyerId });
+    if (!buyer) throw new Error("Buyer not found for given clerkId");
 
     const newOrder = await Order.create({
       ...order,
       event: order.eventId,
-      buyer: order.buyerId,
+      buyer: buyer._id,
     });
 
     return JSON.parse(JSON.stringify(newOrder));
   } catch (error) {
-    console.error("Failed to create order:", error);
-    // Throw proper Error instead of undefined
-    throw new Error("Failed to create order");
+    console.error("Create order failed:", error);
+    throw new Error(
+      error instanceof Error ? error.message : "Failed to create order",
+    );
   }
-};
+}
 
 /* ============================
   GET ORDERS BY EVENT
 ============================ */
 export async function getOrdersByEvent({
-  searchString = "",
   eventId,
+  searchString = "",
 }: GetOrdersByEventParams) {
   try {
     await connectToDatabase();
 
-    if (!eventId) throw new Error("Event ID is required");
+    const skip = 0; // Pagination not yet implemented for this function
 
-    const eventObjectId =
-      typeof eventId === "string" ? new ObjectId(eventId) : eventId;
+    const userConditions = searchString
+      ? {
+          $or: [
+            { firstName: { $regex: searchString, $options: "i" } },
+            { lastName: { $regex: searchString, $options: "i" } },
+          ],
+        }
+      : {};
 
-    console.log(" Fetching orders for event:", eventObjectId);
+    const users = await User.find(userConditions).select("_id");
+    const userIds = users.map((user) => user._id);
 
-    const orders = await Order.aggregate([
-      {
-        $match: {
-          event: eventObjectId, // Match on event field before lookup
-        },
-      },
-      {
-        $lookup: {
-          from: "users",
-          localField: "buyer",
-          foreignField: "_id",
-          as: "buyer",
-        },
-      },
-      { $unwind: "$buyer" },
-      {
-        $lookup: {
-          from: "events",
-          localField: "event",
-          foreignField: "_id",
-          as: "event",
-        },
-      },
-      { $unwind: "$event" },
-      {
-        $project: {
-          _id: 1,
-          totalAmount: 1,
-          createdAt: 1,
-          eventTitle: "$event.title",
-          eventId: "$event._id",
-          buyer: { $concat: ["$buyer.firstName", " ", "$buyer.lastName"] },
-        },
-      },
-      ...(searchString
-        ? [
-            {
-              $match: {
-                buyer: { $regex: new RegExp(searchString, "i") },
-              },
-            },
-          ]
-        : []),
-    ]);
+    const conditions = {
+      event: eventId,
+      ...(searchString ? { buyer: { $in: userIds } } : {}),
+    };
 
-    console.log(" Orders found:", orders.length);
-    return JSON.parse(JSON.stringify(orders));
+    const orders = await Order.find(conditions)
+      .sort({ createdAt: -1 })
+      .populate({
+        path: "event",
+        model: Event,
+        select: "_id title",
+      })
+      .populate({
+        path: "buyer",
+        model: User,
+        select: "_id firstName lastName",
+      });
+
+    // Transform to IOrderItem format for the frontend table
+    const plainOrders = orders.map((order: any) => ({
+      _id: order._id,
+      totalAmount: order.totalAmount,
+      createdAt: order.createdAt,
+      eventTitle: order.event?.title || "",
+      eventId: order.event?._id || "",
+      buyer: order.buyer ? `${order.buyer.firstName} ${order.buyer.lastName}` : "Unknown",
+    }));
+
+    return JSON.parse(JSON.stringify(plainOrders));
   } catch (error) {
-    console.error(" Error in getOrdersByEvent:", error);
-    // Return empty array on error instead of undefined
+    console.error("Get orders by event failed:", error);
     return [];
   }
 }
@@ -149,34 +143,65 @@ export async function getOrdersByEvent({
 /* ============================
   GET ORDERS BY USER
 ============================ */
-export const getOrdersByUser = async ({
+export async function getOrdersByUser({
   userId,
   page = 1,
-}: GetOrdersByUserParams) => {
+  limit = 10,
+}: GetOrdersByUserParams) {
   try {
     await connectToDatabase();
 
-    // Find MongoDB user by Clerk ID
-    const user = await User.findOne({ clerkId: userId });
-    if (!user) throw new Error("User not found");
+    const buyer = await User.findOne({ clerkId: userId });
+    if (!buyer) return { data: [], totalPages: 0 };
 
-    const currentPage = Number(page) || 1;
+    const pageNumber = Number(page) || 1;
+    const limitNumber = Number(limit) || 10;
+    const skip = (pageNumber - 1) * limitNumber;
 
-    const orders = await Order.find({ buyer: user._id })
+    const orders = await Order.find({ buyer: buyer._id })
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limitNumber)
       .populate({
         path: "event",
         model: Event,
-        populate: { path: "organizer", model: User },
-      })
-      .limit(10)
-      .skip((currentPage - 1) * 10);
+        select: "_id title imageUrl price",
+      });
 
-    console.log(` Found ${orders.length} orders for user ${user.userName}`);
+    const count = await Order.countDocuments({ buyer: buyer._id });
 
-    return JSON.parse(JSON.stringify({ data: orders }));
+    return {
+      data: JSON.parse(JSON.stringify(orders)),
+      totalPages: Math.ceil(count / limitNumber),
+    };
   } catch (error) {
-    console.error(" Error in getOrdersByUser:", error);
-    // Return empty data on error instead of undefined
-    return { data: [] };
+    console.error("Get user orders failed:", error);
+    return { data: [], totalPages: 0 };
   }
-};
+}
+
+/* ============================
+   GET ORDER BY ID
+============================ */
+export async function getOrderById(orderId: string) {
+  try {
+    await connectToDatabase();
+
+    const order = await Order.findById(orderId)
+      .populate({
+        path: "event",
+        model: Event,
+      })
+      .populate({
+        path: "buyer",
+        model: User,
+      });
+
+    if (!order) return null;
+
+    return JSON.parse(JSON.stringify(order));
+  } catch (error) {
+    console.error("Get order failed:", error);
+    return null;
+  }
+}

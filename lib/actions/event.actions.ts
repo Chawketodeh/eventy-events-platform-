@@ -1,12 +1,11 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { auth } from "@clerk/nextjs/server"; // new
+import { auth } from "@clerk/nextjs/server";
 import { connectToDatabase } from "@/lib/database";
 import Event from "@/lib/database/models/event.model";
 import User from "@/lib/database/models/user.model";
 import Category from "@/lib/database/models/category.model";
-import { handleError } from "@/lib/utils";
 
 import {
   CreateEventParams,
@@ -16,18 +15,20 @@ import {
   GetRelatedEventsByCategoryParams,
 } from "@/types";
 
-// Get category by name (case insensitive)
+/* ===============================
+   HELPERS
+================================ */
+
 const getCategoryByName = async (name: string) => {
   return Category.findOne({ name: { $regex: name, $options: "i" } });
 };
 
-// Helper to populate Event
 const populateEvent = (query: any) => {
   return query
     .populate({
       path: "organizer",
       model: User,
-      select: "_id clerkId firstName lastName", //  added clerkId here
+      select: "_id clerkId firstName lastName",
     })
     .populate({
       path: "category",
@@ -39,43 +40,30 @@ const populateEvent = (query: any) => {
 /* ===============================
    CREATE EVENT
 ================================ */
-export async function createEvent({ userId, event, path }: CreateEventParams) {
+export async function createEvent({ event, path }: CreateEventParams) {
   try {
-    const { userId: clerkUserId, sessionClaims } = await auth();
-    if (!clerkUserId) throw new Error("Unauthorized");
+    const { userId, sessionClaims } = await auth();
+    if (!userId) throw new Error("Unauthorized");
 
     await connectToDatabase();
 
-    //  Extract user details from Clerk claims
     const firstName = sessionClaims?.firstName || "Unknown";
     const lastName = sessionClaims?.lastName || "";
     const email = sessionClaims?.email || "";
 
-    //  Find or create organizer
-    let organizer = await User.findOne({ clerkId: clerkUserId });
+    let organizer = await User.findOne({ clerkId: userId });
 
     if (!organizer) {
       organizer = await User.create({
-        clerkId: clerkUserId,
+        clerkId: userId,
         firstName,
         lastName,
         email,
       });
     }
 
-    //  Create the new event
     const newEvent = await Event.create({
-      title: event.title,
-      description: event.description,
-      location: event.location,
-      latitude: event.latitude,
-      longitude: event.longitude,
-      imageUrl: event.imageUrl,
-      startDateTime: event.startDateTime,
-      endDateTime: event.endDateTime,
-      price: event.price,
-      isFree: event.isFree,
-      url: event.url,
+      ...event,
       category: event.categoryId,
       organizer: organizer._id,
     });
@@ -83,7 +71,10 @@ export async function createEvent({ userId, event, path }: CreateEventParams) {
     revalidatePath(path);
     return JSON.parse(JSON.stringify(newEvent));
   } catch (error) {
-    handleError(error);
+    console.error("Create event failed:", error);
+    throw new Error(
+      error instanceof Error ? error.message : "Failed to create event"
+    );
   }
 }
 
@@ -95,38 +86,37 @@ export async function getEventById(eventId: string) {
     await connectToDatabase();
 
     const event = await populateEvent(Event.findById(eventId)).exec();
-    if (!event) throw new Error("Event not found");
+    if (!event) return null;
 
     return JSON.parse(JSON.stringify(event));
   } catch (error) {
-    console.error("Error fetching event:", error);
-    throw new Error("Failed to fetch event");
+    console.error("Get event failed:", error);
+    return null;
   }
 }
 
 /* ===============================
    UPDATE EVENT
 ================================ */
-export async function updateEvent({ userId, event, path }: UpdateEventParams) {
+export async function updateEvent({ event, path }: UpdateEventParams) {
   try {
-    const { userId: clerkUserId, sessionClaims } = await auth();
-    if (!clerkUserId) throw new Error("Unauthorized");
+    const { userId, sessionClaims } = await auth();
+    if (!userId) throw new Error("Unauthorized");
 
     const isAdmin =
       sessionClaims?.isAdmin === true || sessionClaims?.isAdmin === "true";
 
     await connectToDatabase();
 
-    const organizer = await User.findOne({ clerkId: clerkUserId });
+    const organizer = await User.findOne({ clerkId: userId });
     if (!organizer) throw new Error("User not found");
 
-    const eventToUpdate = await Event.findById(event._id);
-    if (!eventToUpdate) throw new Error("Event not found");
+    const existingEvent = await Event.findById(event._id);
+    if (!existingEvent) throw new Error("Event not found");
 
-    // prevent editing others' events unless admin
     if (
       !isAdmin &&
-      eventToUpdate.organizer.toString() !== organizer._id.toString()
+      existingEvent.organizer.toString() !== organizer._id.toString()
     ) {
       throw new Error("Unauthorized action");
     }
@@ -134,27 +124,19 @@ export async function updateEvent({ userId, event, path }: UpdateEventParams) {
     const updatedEvent = await Event.findByIdAndUpdate(
       event._id,
       {
-        title: event.title,
-        description: event.description,
-        location: event.location,
-        latitude: event.latitude, //  added
-        longitude: event.longitude, //  added
-        imageUrl: event.imageUrl,
-        startDateTime: event.startDateTime,
-        endDateTime: event.endDateTime,
-        price: event.price,
-        isFree: event.isFree,
-        url: event.url,
+        ...event,
         category: event.categoryId,
       },
-      { new: true },
+      { new: true }
     );
 
     revalidatePath(path);
     return JSON.parse(JSON.stringify(updatedEvent));
   } catch (error) {
-    console.error("Error updating event:", error);
-    throw new Error("Failed to update event");
+    console.error("Update event failed:", error);
+    throw new Error(
+      error instanceof Error ? error.message : "Failed to update event"
+    );
   }
 }
 
@@ -163,55 +145,53 @@ export async function updateEvent({ userId, event, path }: UpdateEventParams) {
 ================================ */
 export async function deleteEvent({ eventId, path }: DeleteEventParams) {
   try {
-    const { userId: clerkUserId, sessionClaims } = await auth();
-    if (!clerkUserId) throw new Error("Unauthorized");
+    const { userId, sessionClaims } = await auth();
+    if (!userId) throw new Error("Unauthorized");
 
     const isAdmin =
       sessionClaims?.isAdmin === true || sessionClaims?.isAdmin === "true";
 
     await connectToDatabase();
 
-    const organizer = await User.findOne({ clerkId: clerkUserId });
+    const organizer = await User.findOne({ clerkId: userId });
     if (!organizer) throw new Error("User not found");
 
-    const eventToDelete = await Event.findById(eventId);
-    if (!eventToDelete) throw new Error("Event not found");
+    const event = await Event.findById(eventId);
+    if (!event) throw new Error("Event not found");
 
-    // prevent deleting others' events unless admin
-    if (
-      !isAdmin &&
-      eventToDelete.organizer.toString() !== organizer._id.toString()
-    ) {
+    if (!isAdmin && event.organizer.toString() !== organizer._id.toString()) {
       throw new Error("Unauthorized action");
     }
 
-    const deletedEvent = await Event.findByIdAndDelete(eventId);
-    if (deletedEvent) revalidatePath(path);
+    await Event.findByIdAndDelete(eventId);
+    revalidatePath(path);
   } catch (error) {
-    console.error("Error deleting event:", error);
-    throw new Error("Failed to delete event");
+    console.error("Delete event failed:", error);
+    throw new Error(
+      error instanceof Error ? error.message : "Failed to delete event"
+    );
   }
 }
 
 /* ===============================
-   GET ALL EVENTS (search + filter)
+   GET ALL EVENTS
 ================================ */
 export async function getAllEvents({
-  query,
+  query = "",
   limit = 6,
   page = 1,
-  category,
+  category = "",
 }: GetAllEventsParams) {
   try {
     await connectToDatabase();
 
-    const skipAmount = (Number(page) - 1) * limit;
+    const pageNumber = Number(page) || 1;
+    const limitNumber = Number(limit) || 6;
+    const skip = (pageNumber - 1) * limitNumber;
 
-    query = typeof query === "string" ? query.trim() : "";
-    category = typeof category === "string" ? category.trim() : "";
-
-    const titleCondition =
-      query && query !== "" ? { title: { $regex: query, $options: "i" } } : {};
+    const titleCondition = query
+      ? { title: { $regex: query, $options: "i" } }
+      : {};
 
     let categoryCondition = {};
     if (category) {
@@ -227,22 +207,18 @@ export async function getAllEvents({
 
     const eventsQuery = Event.find(conditions)
       .sort({ createdAt: "desc" })
-      .skip(skipAmount)
-      .limit(limit);
+      .skip(skip)
+      .limit(limitNumber);
 
-    // Ensure population resolves fully before returning
     const events = await populateEvent(eventsQuery).exec();
+    const count = await Event.countDocuments(conditions);
 
-    const eventsCount = await Event.countDocuments(conditions);
-
-    // Send populated data with organizer names
     return {
       data: JSON.parse(JSON.stringify(events)),
-      totalPages: Math.ceil(eventsCount / limit),
+      totalPages: Math.ceil(count / limitNumber),
     };
   } catch (error) {
-    console.error("Error fetching all events:", error);
-    // Return empty data instead of undefined
+    console.error("Get all events failed:", error);
     return { data: [], totalPages: 0 };
   }
 }
@@ -250,31 +226,43 @@ export async function getAllEvents({
 /* ===============================
    GET EVENTS BY USER
 ================================ */
-export const getEventsByUser = async ({ userId, page = 1, limit = 6 }: any) => {
+export async function getEventsByUser({
+  userId,
+  page = 1,
+  limit = 6,
+}: {
+  userId: string;
+  page?: number;
+  limit?: number;
+}) {
   try {
     await connectToDatabase();
 
     const organizer = await User.findOne({ clerkId: userId });
-    if (!organizer) throw new Error("User not found");
+    if (!organizer) return { data: [], totalPages: 0 };
 
-    const query = Event.find({ organizer: organizer._id })
-      .sort({ createdAt: "desc" })
-      .skip((page - 1) * limit)
-      .limit(limit);
+    const pageNumber = Number(page) || 1;
+    const limitNumber = Number(limit) || 6;
+    const skip = (pageNumber - 1) * limitNumber;
 
-    const events = await query.populate("category").populate("organizer");
+    const events = await populateEvent(
+      Event.find({ organizer: organizer._id })
+        .sort({ createdAt: "desc" })
+        .skip(skip)
+        .limit(limitNumber)
+    ).exec();
+
     const count = await Event.countDocuments({ organizer: organizer._id });
 
     return {
       data: JSON.parse(JSON.stringify(events)),
-      totalPages: Math.ceil(count / limit),
+      totalPages: Math.ceil(count / limitNumber),
     };
   } catch (error) {
-    console.error("Error fetching user events:", error);
-    // Return empty data instead of undefined
+    console.error("Get user events failed:", error);
     return { data: [], totalPages: 0 };
   }
-};
+}
 
 /* ===============================
    GET RELATED EVENTS
@@ -288,47 +276,46 @@ export async function getRelatedEventsByCategory({
   try {
     await connectToDatabase();
 
-    const skipAmount = (Number(page) - 1) * limit;
+    const pageNumber = Number(page) || 1;
+    const limitNumber = Number(limit) || 3;
+    const skip = (pageNumber - 1) * limitNumber;
 
     const conditions = {
-      $and: [{ category: categoryId }, { _id: { $ne: eventId } }],
+      category: categoryId,
+      _id: { $ne: eventId },
     };
 
-    const eventsQuery = Event.find(conditions)
-      .sort({ createdAt: "desc" })
-      .skip(skipAmount)
-      .limit(limit);
+    const events = await populateEvent(
+      Event.find(conditions)
+        .sort({ createdAt: "desc" })
+        .skip(skip)
+        .limit(limitNumber)
+    ).exec();
 
-    const events = await populateEvent(eventsQuery);
-    const eventsCount = await Event.countDocuments(conditions);
+    const count = await Event.countDocuments(conditions);
 
     return {
       data: JSON.parse(JSON.stringify(events)),
-      totalPages: Math.ceil(eventsCount / limit),
+      totalPages: Math.ceil(count / limitNumber),
     };
   } catch (error) {
-    console.error("Error fetching related events:", error);
-    // Return empty data instead of undefined
+    console.error("Get related events failed:", error);
     return { data: [], totalPages: 0 };
   }
 }
 
 /* ===============================
-   DELETE EVENTS BY USER (for Clerk webhook)
+   DELETE EVENTS BY USER (WEBHOOK)
 ================================ */
 export async function deleteEventsByUser(clerkId: string) {
   try {
     await connectToDatabase();
 
     const organizer = await User.findOne({ clerkId });
-    if (!organizer) {
-      console.log(`No user found with Clerk ID ${clerkId}`);
-      return;
-    }
+    if (!organizer) return;
 
-    const result = await Event.deleteMany({ organizer: organizer._id });
-    console.log(`Deleted ${result.deletedCount} events for user ${clerkId}`);
+    await Event.deleteMany({ organizer: organizer._id });
   } catch (error) {
-    console.error("Error deleting user events:", error);
+    console.error("Delete user events failed:", error);
   }
 }
